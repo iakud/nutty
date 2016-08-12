@@ -26,7 +26,7 @@ private:
 	static void init() {
 		s_value_ = new T();
 
-		if (no_destroy) {
+		if (no_member_destroy) {
 			std::atexit(destroy);
 		}
 	}
@@ -44,7 +44,7 @@ private:
 	template <typename U>
 	static std::false_type check(...);
 
-	enum { no_destroy = std::is_same<decltype(check<T>(0)), std::false_type>::value };
+	enum { no_member_destroy = std::is_same<decltype(check<T>(0)), std::false_type>::value };
 
 	static std::once_flag s_once_;
 	static T* s_value_;
