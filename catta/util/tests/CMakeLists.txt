@@ -1,0 +1,2 @@
+add_executable(singleton_test singleton_test.cpp)
+target_link_libraries(singleton_test cattautil pthread rt)
