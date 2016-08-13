@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 
 project(catta CXX)
 
@@ -22,6 +22,7 @@ set(CXX_FLAGS
 	-Wwrite-strings
 	-march=native
 	-std=c++11
+	#-pthread
 	-rdynamic
 	)
 
