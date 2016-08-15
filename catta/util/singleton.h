@@ -23,10 +23,20 @@ private:
 	singleton();
 	~singleton();
 
+	struct has_no_destroy {
+		template <typename U>
+		static auto check(int) -> decltype(std::declval<U>().no_destroy(), std::true_type());
+
+		template <typename U>
+		static std::false_type check(...);
+
+		enum { value = std::is_same<decltype(check<T>(0)), std::true_type>::value };
+	}; // end struct has_no_destroy
+
 	static void init() {
 		s_value_ = new T();
 
-		if (no_member_destroy) {
+		if (!has_no_destroy::value) {
 			std::atexit(destroy);
 		}
 	}
@@ -37,14 +47,6 @@ private:
 		delete s_value_;
 		s_value_ = nullptr;
 	}
-
-	template <typename U>
-	static auto check(int) -> decltype(std::declval<U>().no_destroy(), std::true_type());
-
-	template <typename U>
-	static std::false_type check(...);
-
-	enum { no_member_destroy = std::is_same<decltype(check<T>(0)), std::false_type>::value };
 
 	static std::once_flag s_once_;
 	static T* s_value_;
