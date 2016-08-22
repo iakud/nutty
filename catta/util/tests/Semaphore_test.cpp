@@ -6,7 +6,9 @@
 
 class Test {
 public:
-	Test() : sem_() {
+	Test()
+		: sem_()
+		, thread_() {
 		thread_ = std::thread(std::bind(&Test::threadFunc, this));
 	}
 

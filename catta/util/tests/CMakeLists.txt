@@ -13,3 +13,7 @@ target_link_libraries(CountDownLatch_test cattautil)
 add_executable(BlockingQueue_test BlockingQueue_test.cpp)
 set_target_properties(BlockingQueue_test PROPERTIES LINK_FLAGS -pthread)
 target_link_libraries(BlockingQueue_test cattautil)
+
+add_executable(BoundedBlockingQueue_test BoundedBlockingQueue_test.cpp)
+set_target_properties(BoundedBlockingQueue_test PROPERTIES LINK_FLAGS -pthread)
+target_link_libraries(BoundedBlockingQueue_test cattautil)

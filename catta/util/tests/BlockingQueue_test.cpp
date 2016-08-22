@@ -10,9 +10,20 @@
 
 class Test {
 public:
-	Test(int numThreads) : latch_(numThreads) {
+	Test(int numThreads)
+		: latch_(numThreads)
+		, threads_() {
 		for (int i = 0; i < numThreads; ++i) {
 			threads_.emplace_back(std::bind(&Test::threadFunc, this));
+		}
+	}
+
+	~Test() {
+		for (size_t i = 0; i < threads_.size(); ++i) {
+			queue_.put("stop");
+		}
+		for (auto& t : threads_) {
+			t.join();
 		}
 	}
 
@@ -26,15 +37,6 @@ public:
 			std::cout << "thread " << std::this_thread::get_id()
 				<< " put data = " << name
 				<< ", size = " << queue_.size() << std::endl;
-		}
-	}
-
-	void joinAll() {
-		for (size_t i = 0; i < threads_.size(); ++i) {
-			queue_.put("stop");
-		}
-		for (auto& t : threads_) {
-			t.join();
 		}
 	}
 
@@ -59,7 +61,6 @@ private:
 };
 
 int main() {
-	Test t(5);
-	t.run(100);
-	t.joinAll();
+	Test test(5);
+	test.run(100);
 }

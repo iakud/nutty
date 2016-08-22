@@ -14,31 +14,31 @@ class BoundedBlockingQueue {
 public:
 	explicit BoundedBlockingQueue(size_t capacity)
 		: mutex_()
-		, cvne_()
-		, cvnf_()
+		, cvnotempty_()
+		, cvnotfull_()
 		, capacity_(capacity)
 		, queue_() {
 	}
 
 	void put(const T& value) {
 		std::unique_lock<std::mutex> lock(mutex_);
-		while (queue_.full()) {
-			cvnf_.wait(lock);
+		while (queue_.size() >= capacity_) {
+			cvnotfull_.wait(lock);
 		}
-		assert(!queue_.full());
+		assert(queue_.size() < capacity_);
 		queue_.push_back(value);
-		cvne_.notify_one();
+		cvnotempty_.notify_one();
 	}
 
 	T take() {
 		std::unique_lock<std::mutex> lock(mutex_);
 		while (queue_.empty()) {
-			cvne_.wait();
+			cvnotempty_.wait(lock);
 		}
 		assert(!queue_.empty());
 		T front(queue_.front());
 		queue_.pop_front();
-		cvnf_.notify_one();
+		cvnotfull_.notify_one();
 		return front;
 	}
 
@@ -68,8 +68,8 @@ public:
 
 private:
 	std::mutex mutex_;
-	std::condition_variable cvne_; // not empty
-	std::condition_variable cvnf_; // not full
+	std::condition_variable cvnotempty_; // not empty
+	std::condition_variable cvnotfull_; // not full
 	size_t capacity_;
 	std::deque<T> queue_;
 }; // end class BoundedBlockingQueue
