@@ -39,6 +39,10 @@ public:
 			std::cout << "wait_until recv timeout" << std::endl;
 		}
 	}
+public:
+	// noncopyable
+	Test(const Test&) = delete;
+	Test& operator=(const Test&) = delete;
 
 private:
 	void threadFunc() {

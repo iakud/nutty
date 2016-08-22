@@ -57,6 +57,10 @@ public:
 		--count_;
 		return true;
 	}
+public:
+	// noncopyable
+	Semaphore(const Semaphore&) = delete;
+	Semaphore& operator=(const Semaphore&) = delete;
 
 private:
 	std::mutex mutex_;
