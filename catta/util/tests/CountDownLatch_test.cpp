@@ -1,7 +1,6 @@
 #include <catta/util/CountDownLatch.h>
 
 #include <thread>
-#include <future>
 #include <vector>
 #include <string>
 
@@ -15,16 +14,16 @@ public:
 		}
 	}
 
+	~Test() {
+		for (auto& t : threads_) {
+			t.join();
+		}
+	}
+
 	void wait() {
 		std::cout << "waiting for count down latch" << std::endl;
 		latch_.wait();
 		std::cout << "all threads started" << std::endl;
-	}
-
-	void joinAll() {
-		for (auto& t : threads_) {
-			t.join();
-		}
 	}
 
 private:
@@ -39,7 +38,6 @@ private:
 };
 
 int main() {
-	Test t(100);
-	t.wait();
-	t.joinAll();
+	Test test(10);
+	test.wait();
 }
