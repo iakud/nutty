@@ -1,3 +1,11 @@
-add_executable(singleton_test singleton_test.cpp)
-set_target_properties(singleton_test PROPERTIES LINK_FLAGS -pthread)
-target_link_libraries(singleton_test cattautil)
+add_executable(Singleton_test Singleton_test.cpp)
+set_target_properties(Singleton_test PROPERTIES LINK_FLAGS -pthread)
+target_link_libraries(Singleton_test cattautil)
+
+add_executable(CountDownLatch_test CountDownLatch_test.cpp)
+set_target_properties(CountDownLatch_test PROPERTIES LINK_FLAGS -pthread)
+target_link_libraries(CountDownLatch_test cattautil)
+
+add_executable(BlockingQueue_test BlockingQueue_test.cpp)
+set_target_properties(BlockingQueue_test PROPERTIES LINK_FLAGS -pthread)
+target_link_libraries(BlockingQueue_test cattautil)
