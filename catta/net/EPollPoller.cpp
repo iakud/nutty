@@ -36,7 +36,7 @@ void EPollPoller::poll(std::vector<Watcher*>& readyList, int timeout) {
 			if (event.events & (EPOLLOUT)) {
 				revents |= WatcherEvents::kEventWrite;
 			}
-			watcher->onEvents(revents);
+			watcher->containTriggeredEvents(revents);
 			if (!readied) {
 				readyList.push_back(watcher);
 			}

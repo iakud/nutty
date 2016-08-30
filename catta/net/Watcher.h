@@ -63,7 +63,7 @@ public:
 	void disableAll() { events_ = kEventNone; update(); }
 	// revents
 	WatcherEvents revents() { return revents_; }
-	void onEvents(WatcherEvents revents) { revents_ |= revents; }
+	void containTriggeredEvents(WatcherEvents revents) { revents_ |= revents; }
 	// callback
 	void setCloseCallback(EventCallback&& cb) { closeCallback_ = cb; }
 	void setErrorCallback(EventCallback&& cb) { errorCallback_ = cb; }
