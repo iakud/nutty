@@ -13,30 +13,35 @@ EPollPoller::EPollPoller()
 }
 
 EPollPoller::~EPollPoller() {
-	::free(events_);
 	::close(epollFd_);
 }
 
 void EPollPoller::poll(std::vector<Watcher*>& readyList, int timeout) {
-	int nfd = ::epoll_wait(epollFd_, events_.data(), events.size(), timeout);
+	int nfd = ::epoll_wait(epollFd_, events_.data(), static_cast<int>(events_.size()), timeout);
 	if (nfd > 0) {
 		for (int i = 0; i < nfd; ++i) {
 			struct epoll_event& event = events_[i];
 			Watcher* watcher = static_cast<Watcher*>(event.data.ptr);
+			bool readied = (watcher->revents() != WatcherEvents::kEventNone);
+			WatcherEvents revents = WatcherEvents::kEventNone;
 			if (event.events & (EPOLLRDHUP|EPOLLHUP)) {
-				watcher->onClose();
+				revents |= WatcherEvents::kEventClose;
 			}
 			if (event.events & (EPOLLERR)) {
-				watcher->onError();
+				revents |= WatcherEvents::kEventError;
 			}
 			if (event.events & (EPOLLIN)) {
-				watcher->onRead();
+				revents |= WatcherEvents::kEventRead;
 			}
 			if (event.events & (EPOLLOUT)) {
-				watcher->onWrite();
+				revents |= WatcherEvents::kEventWrite;
+			}
+			watcher->onEvents(revents);
+			if (!readied) {
+				readyList.push_back(watcher);
 			}
 		}
-		if (nfd == events_.size()) {
+		if (nfd == static_cast<int>(events_.size())) {
 			events_.resize(events_.size() * 2); // events extend
 		}
 	} else if (nfd == 0) {
@@ -48,36 +53,38 @@ void EPollPoller::poll(std::vector<Watcher*>& readyList, int timeout) {
 
 void EPollPoller::addWatcher(Watcher* watcher) {
 	struct epoll_event event;
-	if (watcher->isRead()) {
+	event.events = (EPOLLERR|EPOLLRDHUP|EPOLLET);	// edge trigger
+	WatcherEvents events = watcher->events();
+	if (events & WatcherEvents::kEventRead) {
 		event.events |= EPOLLIN;
 	}
-	if (watcher->isWrite()) {
+	if (events & WatcherEvents::kEventWrite) {
 		event.events |= EPOLLOUT;
 	}
-	event.events |= (EPOLLERR|EPOLLRDHUP|EPOLLET);	// edge trigger
 	event.data.ptr = watcher;
-	if (::epoll_ctl(epollFd_, EPOLL_CTL_ADD, watcher->getFd(), &event) < 0) {
+	if (::epoll_ctl(epollFd_, EPOLL_CTL_ADD, watcher->fd(), &event) < 0) {
 		// FIXME : on error
 	}
 }
 
 void EPollPoller::updateWatcher(Watcher* watcher) {
 	struct epoll_event event;
-	if (channel->isRead()) {
+	event.events = (EPOLLERR|EPOLLRDHUP|EPOLLET);	// edge trigger
+	WatcherEvents events = watcher->events();
+	if (events & WatcherEvents::kEventRead) {
 		event.events |= EPOLLIN;
 	}
-	if (channel->isWrite()) {
+	if (events & WatcherEvents::kEventWrite) {
 		event.events |= EPOLLOUT;
 	}
-	event.events |= (EPOLLERR|EPOLLRDHUP|EPOLLET);	// edge trigger
-	event.data.ptr = channel;
-	if (::epoll_ctl(epollFd_, EPOLL_CTL_MOD, watcher->getFd(), &event) < 0) {
+	event.data.ptr = watcher;
+	if (::epoll_ctl(epollFd_, EPOLL_CTL_MOD, watcher->fd(), &event) < 0) {
 		// FIXME : on error
 	}
 }
 
 void EPollPoller::removeWatcher(Watcher* watcher) {
-	if (::epoll_ctl(epollFd_, EPOLL_CTL_DEL, watcher->getFd(), nullptr) < 0) {
+	if (::epoll_ctl(epollFd_, EPOLL_CTL_DEL, watcher->fd(), nullptr) < 0) {
 		// FIXME : on error
 	}
 }

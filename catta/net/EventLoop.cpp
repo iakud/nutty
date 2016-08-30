@@ -25,13 +25,13 @@ int createEventFd() {
 EventLoop::EventLoop()
 	: quit_(false)
 	, mutex_()
-	, pendingFunctors_()
-	, activedChannels_()
-	, epollPoller_(new EPollPoller())
+	, functors_()
+	, readyList_()
+	, poller_(new EPollPoller())
 	, wakeupFd_(createEventFd())
-	, wakeupWatcher_(new Watcher(this, wakeupFd_)) {
+	, wakeupWatcher_(new Watcher(wakeupFd_, this)) {
 	wakeupWatcher_->setReadCallback(std::bind(&EventLoop::handleWakeup, this));
-	wakeupWatcher_->enableRead();
+	wakeupWatcher_->enableReading();
 	wakeupWatcher_->start();
 }
 
@@ -49,12 +49,13 @@ void EventLoop::loop() {
 	quit_ = false;
 	// blocking until quit
 	while(!quit_) {
-		epollPoller_->poll(readyList_, kPollTime); // poll network event
+		poller_->poll(readyList_, kPollTime); // poll network event
 
 		std::vector<Watcher*> readyList;
 		readyList.swap(readyList_);
 		for (Watcher*& watcher : readyList) {
-			if (watcher->handleEvents()) {
+			watcher->handleEvents();
+			if (watcher->revents() != WatcherEvents::kEventNone) {
 				readyList_.push_back(watcher);
 			}
 		}
@@ -99,11 +100,17 @@ void EventLoop::doFunctors() {
 
 void EventLoop::wakeup() {
 	uint64_t flag = 1;
-	::write(wakeupFd_, &flag, sizeof flag);
+	ssize_t n = ::write(wakeupFd_, &flag, sizeof flag);
+	if (n != sizeof flag) {
+		// FIXME : on error
+	}
 }
 
-void EventLoop::handleWakeup() {
+bool EventLoop::handleWakeup() {
 	uint64_t flag;
-	::read(wakeupFd_, &flag, sizeof flag);
-	wakeupChannel_->disableReadable();
+	ssize_t n = ::read(wakeupFd_, &flag, sizeof flag);
+	if (n != sizeof flag) {
+		// FIXME : on error
+	}
+	return false;
 }

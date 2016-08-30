@@ -4,76 +4,56 @@
 
 using namespace catta;
 
-Channel::Channel(EventLoop* loop, const int fd)
-	: loop_(loop)
-	, fd_(fd)
-	, read_(false)
-	, write_(false)
-	, rclose_(false)
-	, rerror_(false)
-	, rread_(false)
-	, rwrite_(false)
-	, started_(false)
-	, actived_(false)
-	, readable_(false)
-	, writeable_(false) {
+Watcher::Watcher(const int fd, EventLoop* loop)
+	: fd_(fd)
+	, loop_(loop)
+	, events_(WatcherEvents::kEventNone)
+	, revents_(WatcherEvents::kEventNone)
+	, started_(false) {
 }
 
-Channel::~Channel() {
+Watcher::~Watcher() {
 }
 
-void Channel::onClose() {
-	if (!rclose_) {
-		rclose_ = true;
-		addActivedChannel();
+void Watcher::start() {
+	if (!started_) {
+		loop_->addWatcher(this);
+		started_ = true;
 	}
 }
 
-void Channel::onError() {
-	if (!rerror_) {
-		rerror_ = true;
-		addActivedChannel();
+void Watcher::update() {
+	if (started_) {
+		loop_->updateWatcher(this);
 	}
 }
 
-void Channel::onRead() {
-	if (read_ && !readable_ && !rread_) {
-		readable_ = rread_ = true;
-		addActivedChannel();
+void Watcher::stop() {
+	if (started_) {
+		loop_->removeWatcher(this);
+		started_ = false;
 	}
 }
 
-void Channel::onWrite() {
-	if (write_ && !writeable_ && !rwrite_) {
-		writeable_ = rwrite_ = true;
-		addActivedChannel();
-	}
-}
-
-void Channel::handleEvents() {
-	actived_ = false;
-	if (rclose_) {
-		rclose_ = false;
-		if (closeCallback_) {
-			closeCallback_();
+void Watcher::handleEvents() {
+	if (revents_ & kEventClose) {
+		if (!closeCallback_ || !closeCallback_()) {
+			revents_ &= ~kEventClose;
 		}
 	}
-	if (rerror_) {
-		rerror_ = false;
-		if (errorCallback_) {
-			errorCallback_();
+	if (revents_ & kEventError) {
+		if (!errorCallback_ || !errorCallback_()) {
+			revents_ &= ~kEventError;
 		}
 	}
-	if (rread_) {
-		rread_ = false;
-		if (readCallback_) {
-			readCallback_();
+	if (revents_ & kEventRead) {
+		if (!readCallback_ || !readCallback_()) {
+			revents_ &= ~kEventRead;
 		}
 	}
-	if (rwrite_) {
-		rwrite_ = false;
-		if (writeCallback_) {
-			writeCallback_();
+	if (revents_ & kEventWrite) {
+		if (!writeCallback_ || !writeCallback_()) {
+			revents_ &= ~kEventWrite;
 		}
 	}
 }

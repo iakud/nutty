@@ -38,7 +38,7 @@ private:
 	void doFunctors();
 
 	void wakeup();
-	void handleWakeup();
+	bool handleWakeup();
 
 	bool quit_;
 	std::mutex mutex_;
@@ -47,6 +47,8 @@ private:
 	std::unique_ptr<EPollPoller> poller_;
 	int wakeupFd_;
 	std::unique_ptr<Watcher> wakeupWatcher_;
+
+	friend class Watcher;
 }; // end class EventLoop
 
 } // end namespace catta

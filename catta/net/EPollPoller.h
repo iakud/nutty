@@ -1,6 +1,8 @@
 #ifndef CATTA_NET_EPOLLPOLLER_H
 #define CATTA_NET_EPOLLPOLLER_H
 
+#include <vector>
+
 struct epoll_event;
 
 namespace catta {
