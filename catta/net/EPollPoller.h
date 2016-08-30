@@ -27,6 +27,8 @@ public:
 	EPollPoller& operator=(const EPollPoller&) = delete;
 
 private:
+	void fillReadiedWatchers(int numEvents, std::vector<Watcher*>& readyList);
+
 	int epollFd_;
 	std::vector<struct epoll_event> events_;
 }; // end class EPollPoller

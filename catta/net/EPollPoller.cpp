@@ -19,28 +19,7 @@ EPollPoller::~EPollPoller() {
 void EPollPoller::poll(std::vector<Watcher*>& readyList, int timeout) {
 	int nfd = ::epoll_wait(epollFd_, events_.data(), static_cast<int>(events_.size()), timeout);
 	if (nfd > 0) {
-		for (int i = 0; i < nfd; ++i) {
-			struct epoll_event& event = events_[i];
-			Watcher* watcher = static_cast<Watcher*>(event.data.ptr);
-			bool readied = (watcher->revents() != WatcherEvents::kEventNone);
-			WatcherEvents revents = WatcherEvents::kEventNone;
-			if (event.events & (EPOLLRDHUP|EPOLLHUP)) {
-				revents |= WatcherEvents::kEventClose;
-			}
-			if (event.events & (EPOLLERR)) {
-				revents |= WatcherEvents::kEventError;
-			}
-			if (event.events & (EPOLLIN)) {
-				revents |= WatcherEvents::kEventRead;
-			}
-			if (event.events & (EPOLLOUT)) {
-				revents |= WatcherEvents::kEventWrite;
-			}
-			watcher->containTriggeredEvents(revents);
-			if (!readied) {
-				readyList.push_back(watcher);
-			}
-		}
+		fillReadiedWatchers(nfd, readyList);
 		if (nfd == static_cast<int>(events_.size())) {
 			events_.resize(events_.size() * 2); // events extend
 		}
@@ -48,6 +27,32 @@ void EPollPoller::poll(std::vector<Watcher*>& readyList, int timeout) {
 
 	} else if (errno != EINTR) {
 		// error happens
+	}
+}
+
+void EPollPoller::fillReadiedWatchers(int numEvents, std::vector<Watcher*>& readyList) {
+	for (int i = 0; i < numEvents; ++i) {
+		struct epoll_event& event = events_[i];
+		Watcher* watcher = static_cast<Watcher*>(event.data.ptr);
+		WatcherEvents revents = WatcherEvents::kEventNone;
+		// contain triggered events
+		if (event.events & (EPOLLRDHUP|EPOLLHUP)) {
+			revents |= WatcherEvents::kEventClose;
+		}
+		if (event.events & (EPOLLERR)) {
+			revents |= WatcherEvents::kEventError;
+		}
+		if (event.events & (EPOLLIN)) {
+			revents |= WatcherEvents::kEventRead;
+		}
+		if (event.events & (EPOLLOUT)) {
+			revents |= WatcherEvents::kEventWrite;
+		}
+		bool readied = (watcher->revents() != WatcherEvents::kEventNone);
+		watcher->containEvents(revents);
+		if (!readied) {
+			readyList.push_back(watcher);
+		}
 	}
 }
 
