@@ -45,33 +45,31 @@ class EventLoop;
 
 class Watcher {
 public:
-	typedef std::function<bool()> EventCallback;
+	static const int kInvalidActiveIndex = -1;
+	typedef std::function<void()> EventCallback;
 
 public:
 	Watcher(const int fd, EventLoop* loop);
 	~Watcher();
-
 	// fd
 	int fd() { return fd_; }
-	// events
-	WatcherEvents events() { return events_; }
-	void enableReading() { events_ |= kEventRead; update(); }
-	void disableReading() { events_ &= ~kEventRead; update(); }
-	void enableWriting() { events_ |= kEventWrite; update(); }
-	void disableWriting() { events_ &= ~kEventWrite; update(); }
-	void enableAll() { events_ = kEventRead | kEventWrite; update(); }
-	void disableAll() { events_ = kEventNone; update(); }
-	// revents
-	WatcherEvents revents() { return revents_; }
-	void containEvents(WatcherEvents revents) { revents_ |= revents; }
 	// callback
 	void setCloseCallback(EventCallback&& cb) { closeCallback_ = cb; }
 	void setErrorCallback(EventCallback&& cb) { errorCallback_ = cb; }
 	void setReadCallback(EventCallback&& cb) { readCallback_ = cb; }
 	void setWriteCallback(EventCallback&& cb) { writeCallback_ = cb; }
+	// events
+	WatcherEvents events() { return events_; }
+	void setEvents(WatcherEvents events);
+	// revents
+	WatcherEvents revents() { return revents_; }
+	void containEvents(WatcherEvents revents) { revents_ |= revents; }
+	void activeEvents(WatcherEvents revents); // not use in poll
+	// active index
+	int activeIndex() { return activeIndex_; }
+	void setActiveIndex(int activeIndex) { activeIndex_ = activeIndex; }
 
 	void start();
-	void update();
 	void stop();
 
 	void handleEvents();
@@ -82,18 +80,21 @@ public:
 	Watcher& operator=(const Watcher&) = delete;
 
 private:
+	void update();
+
 	const int fd_;
 	EventLoop* loop_;
-	// events
-	WatcherEvents events_;
-	WatcherEvents revents_;
 	// events callback
 	EventCallback closeCallback_;
 	EventCallback errorCallback_;
 	EventCallback readCallback_;
 	EventCallback writeCallback_;
+	// events
+	WatcherEvents events_;
+	WatcherEvents revents_;
 
 	bool started_;	// started
+	int activeIndex_; // active table index
 }; // end class Watcher
 
 } // end namespace catta

@@ -31,7 +31,7 @@ EventLoop::EventLoop()
 	, wakeupFd_(createEventFd())
 	, wakeupWatcher_(new Watcher(wakeupFd_, this)) {
 	wakeupWatcher_->setReadCallback(std::bind(&EventLoop::handleWakeup, this));
-	wakeupWatcher_->enableReading();
+	wakeupWatcher_->setEvents(WatcherEvents::kEventRead);
 	wakeupWatcher_->start();
 }
 
@@ -49,17 +49,16 @@ void EventLoop::loop() {
 	quit_ = false;
 	// blocking until quit
 	while(!quit_) {
-		poller_->poll(readyList_, kPollTime); // poll network event
+		poller_->poll(activeWatchers_, kPollTime); // poll network event
 
-		std::vector<Watcher*> readyList;
-		readyList.swap(readyList_);
-		for (Watcher*& watcher : readyList) {
-			watcher->handleEvents();
-			if (watcher->revents() != WatcherEvents::kEventNone) {
-				readyList_.push_back(watcher);
+		std::vector<Watcher*> activeWatchers;
+		activeWatchers.swap(activeWatchers_);
+		for (Watcher*& watcher : activeWatchers) {
+			if (watcher) {
+				watcher->handleEvents();
 			}
 		}
-		if (!readyList_.empty()) {
+		if (!activeWatchers_.empty()) {
 			wakeup();
 		}
 

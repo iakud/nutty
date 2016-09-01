@@ -12,11 +12,12 @@ class Watcher;
 class EPollPoller {
 protected:
 	static const int kEventSizeInit = 16;
+
 public:
 	EPollPoller();
 	virtual ~EPollPoller();
 
-	void poll(std::vector<Watcher*>& readyList, int timeout);
+	void poll(std::vector<Watcher*>& activeWatchers, int timeout);
 	void addWatcher(Watcher* watcher);
 	void updateWatcher(Watcher* watcher);
 	void removeWatcher(Watcher* watcher);
@@ -27,9 +28,9 @@ public:
 	EPollPoller& operator=(const EPollPoller&) = delete;
 
 private:
-	void fillReadiedWatchers(int numEvents, std::vector<Watcher*>& readyList);
+	void fillActiveWatchers(int numEvents, std::vector<Watcher*>& activeWatchers);
 
-	int epollFd_;
+	int epollfd_;
 	std::vector<struct epoll_event> events_;
 }; // end class EPollPoller
 

@@ -43,6 +43,7 @@ private:
 	bool quit_;
 	std::mutex mutex_;
 	std::vector<Functor> functors_;
+	std::vector<Watcher*> activeWatchers_;
 	std::vector<Watcher*> readyList_;
 	std::unique_ptr<EPollPoller> poller_;
 	int wakeupFd_;
@@ -53,4 +54,4 @@ private:
 
 } // end namespace catta
 
-#endif // IAK_NET_EVENTLOOP_H
+#endif // CATTA_NET_EVENTLOOP_H

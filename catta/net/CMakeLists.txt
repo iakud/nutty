@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 2.6)
 
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} CATTANET_SRCS)
+# aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} CATTANET_SRCS)
+set(CATTANET_SRCS
+	Watcher.cpp
+	EventLoop.cpp
+	EPollPoller.cpp
+	)
+
 add_library(cattanet ${CATTANET_SRCS})
 set_target_properties(cattanet PROPERTIES COMPILE_FLAGS "-std=c++14")
 

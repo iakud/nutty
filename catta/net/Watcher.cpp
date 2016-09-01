@@ -9,10 +9,26 @@ Watcher::Watcher(const int fd, EventLoop* loop)
 	, loop_(loop)
 	, events_(WatcherEvents::kEventNone)
 	, revents_(WatcherEvents::kEventNone)
-	, started_(false) {
+	, started_(false)
+	, activeIndex_(kInvalidActiveIndex) {
 }
 
 Watcher::~Watcher() {
+}
+
+void Watcher::setEvents(WatcherEvents events) {
+	events_ = events | WatcherEvents::kEventError | WatcherEvents::kEventClose;
+	update();
+}
+
+void Watcher::activeEvents(WatcherEvents revents) {
+	if (started_) {
+		revents_ |= revents;
+		if (activeIndex_ == kInvalidActiveIndex) {
+			activeIndex_ = static_cast<int>(loop_->activeWatchers_.size());
+			loop_->activeWatchers_.push_back(this);
+		}
+	}
 }
 
 void Watcher::start() {
@@ -30,30 +46,29 @@ void Watcher::update() {
 
 void Watcher::stop() {
 	if (started_) {
+		if (activeIndex_ != kInvalidActiveIndex) {
+			loop_->activeWatchers_[activeIndex_] = nullptr;
+			activeIndex_ = kInvalidActiveIndex;
+		}
 		loop_->removeWatcher(this);
 		started_ = false;
 	}
 }
 
 void Watcher::handleEvents() {
-	if (revents_ & kEventClose) {
-		if (!closeCallback_ || !closeCallback_()) {
-			revents_ &= ~kEventClose;
-		}
+	WatcherEvents revents = revents_ & events_;
+	revents_ = WatcherEvents::kEventNone;
+	activeIndex_ = kInvalidActiveIndex;
+	if (revents & kEventClose && closeCallback_) {
+		closeCallback_();
 	}
-	if (revents_ & kEventError) {
-		if (!errorCallback_ || !errorCallback_()) {
-			revents_ &= ~kEventError;
-		}
+	if (revents & kEventError && errorCallback_) {
+		errorCallback_();
 	}
-	if (revents_ & kEventRead) {
-		if (!readCallback_ || !readCallback_()) {
-			revents_ &= ~kEventRead;
-		}
+	if (revents & kEventRead && readCallback_) {
+		readCallback_();
 	}
-	if (revents_ & kEventWrite) {
-		if (!writeCallback_ || !writeCallback_()) {
-			revents_ &= ~kEventWrite;
-		}
+	if (revents & kEventWrite && writeCallback_) {
+		writeCallback_();
 	}
 }
