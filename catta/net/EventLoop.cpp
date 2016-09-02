@@ -50,7 +50,7 @@ void EventLoop::loop() {
 	// blocking until quit
 	while(!quit_) {
 		poller_->poll(activeWatchers_, kPollTime); // poll network event
-
+		handleActiveWatchers();
 		doFunctors();
 	}
 }
