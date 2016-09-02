@@ -51,17 +51,6 @@ void EventLoop::loop() {
 	while(!quit_) {
 		poller_->poll(activeWatchers_, kPollTime); // poll network event
 
-		std::vector<Watcher*> activeWatchers;
-		activeWatchers.swap(activeWatchers_);
-		for (Watcher*& watcher : activeWatchers) {
-			if (watcher) {
-				watcher->handleEvents();
-			}
-		}
-		if (!activeWatchers_.empty()) {
-			wakeup();
-		}
-
 		doFunctors();
 	}
 }
@@ -83,7 +72,32 @@ void EventLoop::updateWatcher(Watcher* watcher) {
 }
 
 void EventLoop::removeWatcher(Watcher* watcher) {
+	if (watcher->activeIndex() != Watcher::kInvalidActiveIndex) {
+		activeWatchers_[watcher->activeIndex()] = nullptr;
+		watcher->setActiveIndex(Watcher::kInvalidActiveIndex);
+	}
 	poller_->removeWatcher(watcher);
+}
+
+void EventLoop::handleActiveWatchers() {
+	int activeIndex = 0;
+	for (Watcher*& watcher : activeWatchers_) {
+		if (watcher) {
+			watcher->handleEvents();
+			if (watcher->revents() != WatcherEvents::kEventNone) {
+				activeWatchers_[activeIndex] = watcher;
+				watcher->setActiveIndex(activeIndex++);
+			} else {
+				watcher->setActiveIndex(Watcher::kInvalidActiveIndex);
+			}
+		}
+	}
+	if (activeIndex > 0) {
+		activeWatchers_.resize(activeIndex);
+		wakeup();
+	} else {
+		activeWatchers_.clear();
+	}
 }
 
 void EventLoop::doFunctors() {

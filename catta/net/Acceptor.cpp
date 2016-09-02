@@ -10,11 +10,6 @@
 
 using namespace catta;
 
-AcceptorPtr Acceptor::make(EventLoop* loop,
-		const struct sockaddr_in& localSockAddr) {
-	return std::make_shared<Acceptor>(loop, localSockAddr);
-}
-
 Acceptor::Acceptor(EventLoop* loop, const struct sockaddr_in& localSockAddr)
 	: loop_(loop)
 	, localSockAddr_(localSockAddr)
@@ -25,7 +20,7 @@ Acceptor::Acceptor(EventLoop* loop, const struct sockaddr_in& localSockAddr)
 	Socket::bind(sockFd_, localSockAddr_);
 	Socket::setReuseAddr(sockFd_, true);
 	watcher_.setReadCallback(std::bind(&Acceptor::handleRead, this));
-	watcher_.enableRead();
+	watcher_.setEvents(WatcherEvents::kEventRead);
 }
 
 Acceptor::~Acceptor() {
@@ -37,7 +32,7 @@ Acceptor::~Acceptor() {
 void Acceptor::listen() {
 	listenning_ = true;
 	Socket::listen(sockFd_);
-	channel_.start();
+	watcher_.start();
 }
 
 bool Acceptor::handleRead() {
@@ -55,11 +50,11 @@ bool Acceptor::handleRead() {
 			idleFd_ = Socket::accept(sockFd_, nullptr);
 			::close(idleFd_);
 			idleFd_ = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
-			return true;
+
+			watcher_->activeEvents(WatcherEvents::kEventRead);
 		} else {
 			// FIXME
 		}
-		return false;
 	} else {
 		// accept successful
 		if (acceptCallback_) {
@@ -67,6 +62,7 @@ bool Acceptor::handleRead() {
 		} else {
 			Socket::close(sockFd);
 		}
-		return true;
+
+		watcher_->activeEvents(WatcherEvents::kEventRead);
 	}
 }

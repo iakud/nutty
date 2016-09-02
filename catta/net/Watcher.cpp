@@ -24,10 +24,6 @@ void Watcher::setEvents(WatcherEvents events) {
 void Watcher::activeEvents(WatcherEvents revents) {
 	if (started_) {
 		revents_ |= revents;
-		if (activeIndex_ == kInvalidActiveIndex) {
-			activeIndex_ = static_cast<int>(loop_->activeWatchers_.size());
-			loop_->activeWatchers_.push_back(this);
-		}
 	}
 }
 
@@ -46,10 +42,7 @@ void Watcher::update() {
 
 void Watcher::stop() {
 	if (started_) {
-		if (activeIndex_ != kInvalidActiveIndex) {
-			loop_->activeWatchers_[activeIndex_] = nullptr;
-			activeIndex_ = kInvalidActiveIndex;
-		}
+		revents_ = WatcherEvents::kEventNone;
 		loop_->removeWatcher(this);
 		started_ = false;
 	}
@@ -58,7 +51,6 @@ void Watcher::stop() {
 void Watcher::handleEvents() {
 	WatcherEvents revents = revents_ & events_;
 	revents_ = WatcherEvents::kEventNone;
-	activeIndex_ = kInvalidActiveIndex;
 	if (revents & kEventClose && closeCallback_) {
 		closeCallback_();
 	}

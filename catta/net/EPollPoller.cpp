@@ -51,8 +51,8 @@ void EPollPoller::fillActiveWatchers(int numEvents, std::vector<Watcher*>& activ
 		}
 		watcher->containEvents(revents);
 		if (watcher->activeIndex() == Watcher::kInvalidActiveIndex) {
-			watcher->setActiveIndex(activeIndex++);
 			activeWatchers.push_back(watcher);
+			watcher->setActiveIndex(activeIndex++);
 		}
 	}
 }

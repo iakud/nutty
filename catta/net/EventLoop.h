@@ -35,6 +35,7 @@ private:
 	void updateWatcher(Watcher* watcher);
 	void removeWatcher(Watcher* watcher);
 
+	void handleActiveWatchers();
 	void doFunctors();
 
 	void wakeup();

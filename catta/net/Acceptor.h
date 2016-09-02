@@ -1,7 +1,6 @@
 #ifndef CATTA_NET_ACCEPTOR_H
 #define CATTA_NET_ACCEPTOR_H
 
-#include <memory>
 #include <functional>
 
 #include <arpa/inet.h>
@@ -11,16 +10,11 @@ namespace catta {
 class EventLoop;
 class Watcher;
 
-class Acceptor;
-typedef std::shared_ptr<Acceptor> AcceptorPtr;
-
-class Acceptor : public std::enable_shared_from_this<Acceptor> {
+class Acceptor {
 
 public:
 	typedef std::function<void(int sockFd,
 			const struct sockaddr_in& remoteSockAddr)> AcceptCallback;
-	static AcceptorPtr make(EventLoop* loop,
-			const struct sockaddr_in& localSockAddr);
 
 public:
 	explicit Acceptor(EventLoop* loop,
