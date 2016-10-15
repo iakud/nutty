@@ -7,8 +7,20 @@
 
 using namespace catta;
 
-Socket::Socket()
-	: sockfd_(::socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, IPPROTO_TCP)) {
+int Socket::create() {
+	int sockfd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP);
+	if (sockfd < 0) {
+		// FIXME : log
+		// LOG_FATAL
+	}
+	return sockfd;
+}
+
+void Socket::close(int sockfd) {
+	if (::close(sockfd) < 0) {
+		// FIXME : log
+		// LOG_ERR
+	}
 }
 
 Socket::Socket(int sockfd)
@@ -18,76 +30,77 @@ Socket::Socket(int sockfd)
 Socket::~Socket() {
 	if (::close(sockfd_) < 0) {
 		// FIXME : log
+		// LOG_ERR
 	}
 }
 
-int Socket::bind(int sockFd, const struct sockaddr_in &addr) {
-	return ::bind(sockFd, reinterpret_cast<const struct sockaddr*>(&addr), static_cast<socklen_t>(sizeof addr));
+int Socket::bind(const struct sockaddr_in& addr) {
+	return ::bind(sockfd_, reinterpret_cast<const struct sockaddr*>(&addr), static_cast<socklen_t>(sizeof addr));
 }
 
-int Socket::listen(int sockFd) {
-	return ::listen(sockFd, SOMAXCONN);
+int Socket::listen() {
+	return ::listen(sockfd_, SOMAXCONN);
 }
 
-int Socket::accept(int sockFd, struct sockaddr_in *addr) {
+int Socket::accept(struct sockaddr_in* addr) {
 	if (addr != nullptr) {
 		socklen_t addrlen = static_cast<socklen_t>(sizeof *addr);
-		return ::accept4(sockFd, reinterpret_cast<struct sockaddr*>(addr), &addrlen, SOCK_NONBLOCK|SOCK_CLOEXEC);
+		return ::accept4(sockfd_, reinterpret_cast<struct sockaddr*>(addr), &addrlen, SOCK_NONBLOCK|SOCK_CLOEXEC);
 	} else {
-		return ::accept4(sockFd, nullptr, nullptr, SOCK_NONBLOCK|SOCK_CLOEXEC);
+		return ::accept4(sockfd_, nullptr, nullptr, SOCK_NONBLOCK|SOCK_CLOEXEC);
 	}
 }
 
-int Socket::connect(int sockFd, const struct sockaddr_in &addr) {
-	return ::connect(sockFd, reinterpret_cast<const struct sockaddr*>(&addr), static_cast<socklen_t>(sizeof addr));
+int Socket::connect(const struct sockaddr_in& addr) {
+	return ::connect(sockfd_, reinterpret_cast<const struct sockaddr*>(&addr), static_cast<socklen_t>(sizeof addr));
 }
 
-int Socket::shutdownWrite(int sockFd) {
-	return ::shutdown(sockFd, SHUT_WR);
+int Socket::shutdownWrite() {
+	return ::shutdown(sockfd_, SHUT_WR);
 }
 
-int Socket::setReuseAddr(int sockFd, bool reuseaddr) {
+int Socket::setReuseAddr(bool reuseaddr) {
 	int optval = reuseaddr ? 1 : 0;
-	return ::setsockopt(sockFd, SOL_SOCKET, SO_REUSEADDR, &optval, static_cast<socklen_t>(sizeof optval));
+	return ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, &optval, static_cast<socklen_t>(sizeof optval));
 }
 
-int Socket::setTcpNoDelay(int sockFd, bool nodelay) {
+int Socket::setTcpNoDelay(bool nodelay) {
 	int optval = nodelay ? 1 : 0;
-	return ::setsockopt(sockFd, IPPROTO_TCP, TCP_NODELAY, &optval, static_cast<socklen_t>(sizeof optval));
+	return ::setsockopt(sockfd_, IPPROTO_TCP, TCP_NODELAY, &optval, static_cast<socklen_t>(sizeof optval));
 }
 
-int Socket::setKeepAlive(int sockFd, bool keepalive) {
+int Socket::setKeepAlive(bool keepalive) {
 	int optval = keepalive ? 1 : 0;
-	return ::setsockopt(sockFd, SOL_SOCKET, SO_KEEPALIVE, &optval, static_cast<socklen_t>(sizeof optval));
+	return ::setsockopt(sockfd_, SOL_SOCKET, SO_KEEPALIVE, &optval, static_cast<socklen_t>(sizeof optval));
 }
 
-int Socket::setKeepIdle(int sockFd, int optval) {
-	return ::setsockopt(sockFd, SOL_TCP, TCP_KEEPIDLE, &optval, static_cast<socklen_t>(sizeof optval));
+int Socket::setKeepIdle(int optval) {
+	return ::setsockopt(sockfd_, SOL_TCP, TCP_KEEPIDLE, &optval, static_cast<socklen_t>(sizeof optval));
 }
 
-int Socket::getError(int sockFd, int *optval) {
+int Socket::getError(int* optval) {
 	if (optval != nullptr) {
 		socklen_t optlen = static_cast<socklen_t>(sizeof *optval);
-		return ::getsockopt(sockFd, SOL_SOCKET, SO_ERROR, optval, &optlen);
+		return ::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, optval, &optlen);
 	} else {
-		return ::getsockopt(sockFd, SOL_SOCKET, SO_ERROR, nullptr, nullptr);
+		return ::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, nullptr, nullptr);
 	}
 }
 
-int Socket::getSockName(int sockFd, struct sockaddr_in *addr) {
+int Socket::getSockName(struct sockaddr_in* addr) {
 	if (addr != nullptr) {
 		socklen_t addrlen = static_cast<socklen_t>(sizeof *addr);
-		return ::getsockname(sockFd, reinterpret_cast<struct sockaddr*>(addr), &addrlen);
+		return ::getsockname(sockfd_, reinterpret_cast<struct sockaddr*>(addr), &addrlen);
 	} else {
-		return ::getsockname(sockFd, nullptr, nullptr);
+		return ::getsockname(sockfd_, nullptr, nullptr);
 	}
 }
 
-int Socket::getPeerName(int sockFd, struct sockaddr_in *addr) {
+int Socket::getPeerName(struct sockaddr_in* addr) {
 	if (addr != nullptr) {
 		socklen_t addrlen = static_cast<socklen_t>(sizeof *addr);
-		return ::getpeername(sockFd, reinterpret_cast<struct sockaddr*>(addr), &addrlen);
+		return ::getpeername(sockfd_, reinterpret_cast<struct sockaddr*>(addr), &addrlen);
 	} else {
-		return ::getpeername(sockFd, nullptr, nullptr);
+		return ::getpeername(sockfd_, nullptr, nullptr);
 	}
 }

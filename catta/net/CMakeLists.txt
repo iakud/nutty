@@ -5,6 +5,9 @@ set(CATTANET_SRCS
 	Watcher.cpp
 	EventLoop.cpp
 	EPollPoller.cpp
+	InetAddress.cpp
+	Socket.cpp
+	Acceptor.cpp
 	)
 
 add_library(cattanet ${CATTANET_SRCS})

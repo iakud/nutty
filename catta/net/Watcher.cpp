@@ -4,9 +4,9 @@
 
 using namespace catta;
 
-Watcher::Watcher(const int fd, EventLoop* loop)
-	: fd_(fd)
-	, loop_(loop)
+Watcher::Watcher(EventLoop* loop, const int fd)
+	: loop_(loop)
+	, fd_(fd)
 	, events_(WatcherEvents::kEventNone)
 	, revents_(WatcherEvents::kEventNone)
 	, started_(false)

@@ -49,7 +49,7 @@ public:
 	typedef std::function<void()> EventCallback;
 
 public:
-	Watcher(const int fd, EventLoop* loop);
+	Watcher(EventLoop* loop, const int fd);
 	~Watcher();
 	// fd
 	int fd() { return fd_; }
@@ -82,8 +82,8 @@ public:
 private:
 	void update();
 
-	const int fd_;
 	EventLoop* loop_;
+	const int fd_;
 	// events callback
 	EventCallback closeCallback_;
 	EventCallback errorCallback_;

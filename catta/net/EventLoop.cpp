@@ -29,7 +29,7 @@ EventLoop::EventLoop()
 	, readyList_()
 	, poller_(new EPollPoller())
 	, wakeupFd_(createEventFd())
-	, wakeupWatcher_(new Watcher(wakeupFd_, this)) {
+	, wakeupWatcher_(new Watcher(this, wakeupFd_)) {
 	wakeupWatcher_->setReadCallback(std::bind(&EventLoop::handleWakeup, this));
 	wakeupWatcher_->setEvents(WatcherEvents::kEventRead);
 	wakeupWatcher_->start();
