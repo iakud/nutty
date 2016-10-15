@@ -1,6 +1,8 @@
 #ifndef CATTA_UTIL_BOUNDEDBLOCKINGQUEUE_H
 #define CATTA_UTIL_BOUNDEDBLOCKINGQUEUE_H
 
+#include <catta/util/noncopyable.h>
+
 #include <mutex>
 #include <condition_variable>
 #include <deque>
@@ -9,7 +11,7 @@
 namespace catta {
 
 template<typename T>
-class BoundedBlockingQueue {
+class BoundedBlockingQueue : noncopyable {
 
 public:
 	explicit BoundedBlockingQueue(size_t capacity)
@@ -60,11 +62,6 @@ public:
 	size_t capacity() const {
 		return capacity_;
 	}
-
-public:
-	// noncopyable
-	BoundedBlockingQueue(const BoundedBlockingQueue&) = delete;
-	BoundedBlockingQueue& operator=(const BoundedBlockingQueue&) = delete;
 
 private:
 	std::mutex mutex_;

@@ -1,9 +1,11 @@
 #include <catta/util/Singleton.h>
 
+#include <catta/util/noncopyable.h>
+
 #include <thread>
 #include <iostream>
 
-class Test {
+class Test : catta::noncopyable {
 public:
 	Test() {
 		std::cout << "constructing " << this << std::endl;
@@ -16,16 +18,11 @@ public:
 	const std::string& getName() const { return name_; }
 	void setName(const std::string& name) { name_ = name; }
 
-public:
-	// noncopyable
-	Test(const Test&) = delete;
-	Test& operator=(const Test&) = delete;
-
 private:
 	std::string name_;
 };
 
-class TestNoDestroy {
+class TestNoDestroy : catta::noncopyable {
 public:
 	TestNoDestroy() {
 		std::cout << "constructing no destroy " << this << std::endl;
@@ -37,11 +34,6 @@ public:
 
 	// tag no_destroy for Singleton<T>
 	void no_destroy();
-
-public:
-	// noncopyable
-	TestNoDestroy(const TestNoDestroy&) = delete;
-	TestNoDestroy& operator=(const TestNoDestroy&) = delete;
 };
 
 void threadFunc() {

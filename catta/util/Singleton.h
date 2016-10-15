@@ -1,23 +1,20 @@
 #ifndef CATTA_UTIL_SINGLETON_H
 #define CATTA_UTIL_SINGLETON_H
 
+#include <catta/util/noncopyable.h>
+
 #include <mutex>
 #include <cstdlib> // std::atexit
 
 namespace catta {
 
 template<typename T>
-class Singleton {
+class Singleton : noncopyable {
 public:
 	static T& instance() {
 		std::call_once(s_once_, Singleton::init);
 		return *s_value_;
 	}
-
-public:
-	// noncopyable
-	Singleton(const Singleton&) = delete;
-	Singleton& operator=(const Singleton&) = delete;
 
 private:
 	Singleton();

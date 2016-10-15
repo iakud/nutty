@@ -1,6 +1,8 @@
 #ifndef CATTA_NET_EVENTLOOP_H
 #define CATTA_NET_EVENTLOOP_H
 
+#include <catta/util/noncopyable.h>
+
 #include <mutex>
 #include <vector>
 #include <memory>
@@ -11,7 +13,7 @@ namespace catta {
 class Watcher;
 class EPollPoller;
 
-class EventLoop {
+class EventLoop : noncopyable {
 public:
 	typedef std::function<void()> Functor;
 
@@ -24,11 +26,6 @@ public:
 	void loopOnce();
 
 	void runInLoop(Functor&& functor);
-
-public:
-	// noncopyable
-	EventLoop(const EventLoop&) = delete;
-	EventLoop& operator=(const EventLoop&) = delete;
 
 private:
 	void addWatcher(Watcher* watcher);

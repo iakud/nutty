@@ -1,6 +1,8 @@
 #ifndef CATTA_UTIL_BLOCKINGQUEUE_H
 #define CATTA_UTIL_BLOCKINGQUEUE_H
 
+#include <catta/util/noncopyable.h>
+
 #include <mutex>
 #include <condition_variable>
 #include <deque>
@@ -9,7 +11,7 @@
 namespace catta {
 
 template<typename T>
-class BlockingQueue {
+class BlockingQueue : noncopyable {
 public:
 	BlockingQueue()
 		: mutex_()
@@ -38,11 +40,6 @@ public:
 		std::unique_lock<std::mutex> lock(mutex_);
 		return queue_.size();
 	}
-
-public:
-	// noncopyable
-	BlockingQueue(const BlockingQueue&) = delete;
-	BlockingQueue& operator=(const BlockingQueue&) = delete;
 
 private:
 	std::mutex mutex_;

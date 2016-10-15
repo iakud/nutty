@@ -1,6 +1,8 @@
 #ifndef CATTA_NET_EPOLLPOLLER_H
 #define CATTA_NET_EPOLLPOLLER_H
 
+#include <catta/util/noncopyable.h>
+
 #include <vector>
 
 struct epoll_event;
@@ -9,7 +11,7 @@ namespace catta {
 
 class Watcher;
 
-class EPollPoller {
+class EPollPoller : noncopyable {
 protected:
 	static const int kEventSizeInit = 16;
 
@@ -21,11 +23,6 @@ public:
 	void addWatcher(Watcher* watcher);
 	void updateWatcher(Watcher* watcher);
 	void removeWatcher(Watcher* watcher);
-
-public:
-	// noncopyable
-	EPollPoller(const EPollPoller&) = delete;
-	EPollPoller& operator=(const EPollPoller&) = delete;
 
 private:
 	void fillActiveWatchers(int numEvents, std::vector<Watcher*>& activeWatchers);

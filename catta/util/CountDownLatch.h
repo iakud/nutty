@@ -1,23 +1,20 @@
 #ifndef CATTA_UTIL_COUNTDOWNLATCH_H
 #define CATTA_UTIL_COUNTDOWNLATCH_H
 
+#include <catta/util/noncopyable.h>
+
 #include <condition_variable>
 #include <mutex>
 
 namespace catta {
 
-class CountDownLatch {
+class CountDownLatch : noncopyable {
 public:
 	explicit CountDownLatch(int count);
 
 	void wait();
 	void countDown();
 	int count();
-
-public:
-	// noncopyable
-	CountDownLatch(const CountDownLatch&) = delete;
-	CountDownLatch& operator=(const CountDownLatch&) = delete;
 
 private:
 	std::mutex mutex_;

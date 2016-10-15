@@ -1,6 +1,8 @@
 #ifndef CATTA_NET_WATCHER_H
 #define CATTA_NET_WATCHER_H
 
+#include <catta/util/noncopyable.h>
+
 #include <functional>
 
 namespace catta {
@@ -43,7 +45,7 @@ inline WatcherEvents operator^=(WatcherEvents a, WatcherEvents b) {
 
 class EventLoop;
 
-class Watcher {
+class Watcher : noncopyable {
 public:
 	static const int kInvalidActiveIndex = -1;
 	typedef std::function<void()> EventCallback;

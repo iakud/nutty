@@ -4,6 +4,8 @@
 #include <catta/net/Watcher.h>
 #include <catta/net/Socket.h>
 
+#include <catta/util/noncopyable.h>
+
 #include <functional>
 
 namespace catta {
@@ -11,7 +13,7 @@ namespace catta {
 class EventLoop;
 class InetAddress;
 
-class Acceptor {
+class Acceptor : noncopyable {
 public:
 	typedef std::function<void(int sockFd, const InetAddress& peerAddr)> AcceptCallback;
 
@@ -25,11 +27,6 @@ public:
 
 	bool isListenning() const { return listenning_; }
 	void listen();
-
-public:
-	// noncopyable
-	Acceptor(const Acceptor&) = delete;
-	Acceptor& operator=(const Acceptor&) = delete;
 
 private:
 	void handleRead();	// read event active

@@ -1,10 +1,12 @@
 #include <catta/util/Semaphore.h>
 
+#include <catta/util/noncopyable.h>
+
 #include <thread>
 
 #include <iostream>
 
-class Test {
+class Test : catta::noncopyable {
 public:
 	Test()
 		: sem_()
@@ -41,10 +43,6 @@ public:
 			std::cout << "wait_until recv timeout" << std::endl;
 		}
 	}
-public:
-	// noncopyable
-	Test(const Test&) = delete;
-	Test& operator=(const Test&) = delete;
 
 private:
 	void threadFunc() {

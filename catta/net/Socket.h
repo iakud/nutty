@@ -1,17 +1,19 @@
 #ifndef CATTA_NET_SOCKET_H
 #define CATTA_NET_SOCKET_H
 
+#include <catta/util/noncopyable.h>
+
 #include <arpa/inet.h>
 
 namespace catta {
 
-class Socket {
+class Socket : noncopyable {
 public:
 	static int create();
 	static void close(int sockfd);
 
 public:
-	Socket(int sockfd);
+	explicit Socket(int sockfd);
 	~Socket();
 
 	int fd() const { return sockfd_; }
