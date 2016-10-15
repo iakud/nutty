@@ -29,14 +29,28 @@ private:
 	// for tcpserver and tcpclient
 	typedef std::function<void(TcpConnectionPtr)> CloseCallback;
 
-	explicit TcpConnection(EventLoop* loop, int sockFd, 
-		const InetAddress& localAddr, const InetAddress& remoteAddr);
+	explicit TcpConnection(EventLoop* loop,
+		int sockfd,
+		const InetAddress& localAddr,
+		const InetAddress& peerAddr);
 	~TcpConnection();
-	
+
 private:
+	EventLoop* loop_;
+	std::unique_ptr<Socket> socket_;
+	std::unique_ptr<Watcher> watcher_;
+	const InetAddress localAddr_;
+	const InetAddress peerAddr_;
+
+	ConnectCallback connectCallback_;
+	ReadCallback readCallback_;
+	WriteCallback writeCallback_;
+	DisconnectCallback disconnectCallback_;
+	CloseCallback closeCallback_;
+
 	// friend class only TcpServer & TcpClient
 	friend class TcpServer;
-	friend class TcpClient;	
+	friend class TcpClient;
 }; // end class TcpConnection
 
 } // end namespace catta

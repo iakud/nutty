@@ -11,11 +11,11 @@
 using namespace catta;
 
 Acceptor::Acceptor(EventLoop* loop, const InetAddress& localAddr)
-: loop_(loop)
-, acceptSocket_(Socket::create())
-, watcher_(loop, acceptSocket_.fd())
-, listenning_(false)
-, idleFd_(::open("/dev/null", O_RDONLY | O_CLOEXEC)) {
+		: loop_(loop)
+		, acceptSocket_(Socket::create())
+		, watcher_(loop, acceptSocket_.fd())
+		, listenning_(false)
+		, idleFd_(::open("/dev/null", O_RDONLY | O_CLOEXEC)) {
 	acceptSocket_.setReuseAddr(true);
 	acceptSocket_.bind(localAddr.getSockAddr());
 
