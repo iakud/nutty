@@ -4,6 +4,8 @@
 #include <catta/net/Socket.h>
 #include <catta/net/Watcher.h>
 
+using namespace catta;
+
 TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
 	const InetAddress& localAddr, const InetAddress& peerAddr)
 		: loop_(loop)
@@ -17,4 +19,28 @@ TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
 	watcher_->setErrorCallback(std::bind(&TcpConnection::handleError, this));
 
 	socket_->setKeepAlive(true);
+}
+
+TcpConnection::~TcpConnection() {
+
+}
+
+void TcpConnection::send(const void* data, int len) {
+
+}
+
+void TcpConnection::handleRead() {
+
+}
+
+void TcpConnection::handleWrite() {
+
+}
+
+void TcpConnection::handleClose() {
+
+}
+
+void TcpConnection::handleError() {
+
 }

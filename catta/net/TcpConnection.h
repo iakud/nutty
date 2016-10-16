@@ -25,16 +25,28 @@ public:
 	typedef std::function<void(TcpConnectionPtr, uint32_t)> WriteCallback;
 	typedef std::function<void(TcpConnectionPtr)> DisconnectCallback;
 
+public:
+	EventLoop* getLoop() const { return loop_; }
+	const InetAddress& localAddress() const { return localAddr_; }
+	const InetAddress& peerAddress() const { return peerAddr_; }
+
+	void send(const void* data, int len);
+
 private:
 	// for tcpserver and tcpclient
 	typedef std::function<void(TcpConnectionPtr)> CloseCallback;
 
+private:
 	explicit TcpConnection(EventLoop* loop,
 		int sockfd,
 		const InetAddress& localAddr,
 		const InetAddress& peerAddr);
 	~TcpConnection();
 
+	void handleRead();
+	void handleWrite();
+	void handleClose();
+	void handleError();
 private:
 	EventLoop* loop_;
 	std::unique_ptr<Socket> socket_;
