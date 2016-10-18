@@ -42,13 +42,13 @@ int Socket::listen() {
 	return ::listen(sockfd_, SOMAXCONN);
 }
 
-int Socket::accept(struct sockaddr_in* addr) {
-	if (addr != nullptr) {
-		socklen_t addrlen = static_cast<socklen_t>(sizeof *addr);
-		return ::accept4(sockfd_, reinterpret_cast<struct sockaddr*>(addr), &addrlen, SOCK_NONBLOCK|SOCK_CLOEXEC);
-	} else {
-		return ::accept4(sockfd_, nullptr, nullptr, SOCK_NONBLOCK|SOCK_CLOEXEC);
-	}
+int Socket::accept() {
+	return ::accept4(sockfd_, nullptr, nullptr, SOCK_NONBLOCK|SOCK_CLOEXEC);
+}
+
+int Socket::accept(struct sockaddr_in& addr) {
+	socklen_t addrlen = static_cast<socklen_t>(sizeof addr);
+	return ::accept4(sockfd_, reinterpret_cast<struct sockaddr*>(&addr), &addrlen, SOCK_NONBLOCK|SOCK_CLOEXEC);
 }
 
 int Socket::connect(const struct sockaddr_in& addr) {
@@ -78,13 +78,13 @@ int Socket::setKeepIdle(int optval) {
 	return ::setsockopt(sockfd_, SOL_TCP, TCP_KEEPIDLE, &optval, static_cast<socklen_t>(sizeof optval));
 }
 
-int Socket::getError(int* optval) {
-	if (optval != nullptr) {
-		socklen_t optlen = static_cast<socklen_t>(sizeof *optval);
-		return ::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, optval, &optlen);
-	} else {
-		return ::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, nullptr, nullptr);
-	}
+int Socket::getError() {
+	return ::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, nullptr, nullptr);
+}
+
+int Socket::getError(int optval) {
+	socklen_t optlen = static_cast<socklen_t>(sizeof optval);
+	return ::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, &optval, &optlen);
 }
 
 int Socket::getSockName(struct sockaddr_in* addr) {

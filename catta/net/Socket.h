@@ -20,7 +20,8 @@ public:
 
 	int bind(const struct sockaddr_in& addr);
 	int listen();
-	int accept(struct sockaddr_in* addr);
+	int accept();
+	int accept(struct sockaddr_in& addr);
 	int connect(const struct sockaddr_in& addr);
 
 	int shutdownWrite();
@@ -30,7 +31,8 @@ public:
 	int setKeepAlive(bool keepalive);
 	int setKeepIdle(int optval);
 
-	int getError(int* optval);
+	int getError();
+	int getError(int optval);
 	int getSockName(struct sockaddr_in* addr);
 	int getPeerName(struct sockaddr_in* addr);
 

@@ -10,12 +10,12 @@
 
 using namespace catta;
 
-Acceptor::Acceptor(EventLoop* loop, const InetAddress& localAddr)
-		: loop_(loop)
-		, acceptSocket_(Socket::create())
-		, watcher_(loop, acceptSocket_.fd())
-		, listenning_(false)
-		, idleFd_(::open("/dev/null", O_RDONLY | O_CLOEXEC)) {
+Acceptor::Acceptor(EventLoop* loop,const InetAddress& localAddr)
+	: loop_(loop)
+	, acceptSocket_(Socket::create())
+	, watcher_(loop, acceptSocket_.fd())
+	, listenning_(false)
+	, idleFd_(::open("/dev/null", O_RDONLY | O_CLOEXEC)) {
 	acceptSocket_.setReuseAddr(true);
 	acceptSocket_.bind(localAddr.getSockAddr());
 
@@ -37,7 +37,7 @@ void Acceptor::listen() {
 void Acceptor::handleRead() {
 	InetAddress peerAddr;
 	struct sockaddr_in peerSockAddr;
-	int connfd = acceptSocket_.accept(&peerSockAddr);
+	int connfd = acceptSocket_.accept(peerSockAddr);
 	if (connfd >= 0) { // accept successful
 		peerAddr.setSockAddr(peerSockAddr);
 		if (acceptCallback_) {
@@ -53,7 +53,7 @@ void Acceptor::handleRead() {
 
 		} else if (EMFILE == err || ENFILE == err) {
 			::close(idleFd_);
-			idleFd_ = acceptSocket_.accept(nullptr);
+			idleFd_ = acceptSocket_.accept();
 			::close(idleFd_);
 			idleFd_ = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
 
