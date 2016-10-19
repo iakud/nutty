@@ -1,15 +1,17 @@
 #ifndef CATTA_BASE_CURRENTTHREAD_h
 #define CATTA_BASE_CURRENTTHREAD_h
 
+#include <unistd.h>
+
 namespace catta {
 
-extern thread_local int t_cachedTid;
+extern thread_local pid_t t_cachedTid;
 
 class CurrentThread {
 public:
-	inline static int tid() {
+	inline static pid_t tid() {
 		if (__builtin_expect(t_cachedTid == 0, 0)) {
-			cacheTid();
+			t_cachedTid = getTid();
 		}
 		return t_cachedTid;
 	}
@@ -17,7 +19,7 @@ public:
 	bool isMainThread();
 
 private:
-	static void cacheTid();
+	static pid_t getTid();
 };
 
 } // end namespace catta

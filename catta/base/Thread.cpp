@@ -1,24 +1,17 @@
 #include <catta/base/Thread.h>
 
-#include <unistd.h>
 #include <sys/syscall.h>
 
 namespace catta {
 
-thread_local int t_cachedTid = 0;
-
-pid_t gettid() {
-  return static_cast<pid_t>(::syscall(SYS_gettid));
-}
+thread_local pid_t t_cachedTid = 0;
 
 } // end namespace catta
 
 using namespace catta;
 
-void CurrentThread::cacheTid() {
-	if (t_cachedTid == 0) {
-		t_cachedTid = gettid();
-	}
+pid_t CurrentThread::getTid() {
+	return static_cast<pid_t>(::syscall(SYS_gettid));
 }
 
 bool CurrentThread::isMainThread() {

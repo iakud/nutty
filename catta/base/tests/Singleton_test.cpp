@@ -1,4 +1,4 @@
-#include <catta/util/Singleton.h>
+#include <catta/base/Singleton.h>
 
 #include <catta/base/noncopyable.h>
 
