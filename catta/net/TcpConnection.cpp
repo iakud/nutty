@@ -9,12 +9,11 @@ using namespace catta;
 TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
 	const InetAddress& localAddr, const InetAddress& peerAddr)
 	: loop_(loop)
+	, state_(kConnecting)
 	, socket_(new Socket(sockfd))
 	, watcher_(new Watcher(loop, sockfd))
 	, localAddr_(localAddr)
-	, peerAddr_(peerAddr)
-	, established_(false)
-	, closed_(false) {
+	, peerAddr_(peerAddr) {
 	watcher_->setReadCallback(std::bind(&TcpConnection::handleRead, this));
 	watcher_->setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
 	watcher_->setCloseCallback(std::bind(&TcpConnection::handleClose, this));
@@ -28,23 +27,29 @@ TcpConnection::~TcpConnection() {
 }
 
 void TcpConnection::send(const void* data, int len) {
-
+	if (state_ == kConnected) {
+		if (loop_->isInLoopThread()) {
+			sendInLoop();
+		} else {
+			loop_->queueInLoop(std::bind(&TcpConnection::sendInLoop, this));
+		}
+	}
 }
 
 void TcpConnection::shutdown() {
-	if (established_ && !closed_) {
-		closed_ = true;
+	if (state_ == kConnected) {
+		setState(kDisconnecting);
 		loop_->runInLoop(std::bind(&TcpConnection::shutdownInLoop, this));
 	}
 }
 
 void TcpConnection::forceClose() {
-	
+	loop_->queueInLoop(std::bind(&TcpConnection::forceCloseInLoop, shared_from_this()));
 }
 
 void TcpConnection::connectEstablished() {
-	if (!established_) {
-		established_ = true;
+	if (state_ == kConnecting) {
+		setState(kConnected);
 		watcher_->setEvents(WatcherEvents::kEventRead);
 		watcher_->start();
 		connectCallback_(shared_from_this());
@@ -52,8 +57,8 @@ void TcpConnection::connectEstablished() {
 }
 
 void TcpConnection::connectDestroyed() {
-	if (!closed_) {
-		closed_ = true;
+	if (state_ == kConnected) {
+		setState(kDisconnected);
 		watcher_->stop();
 		disconnectCallback_(shared_from_this());
 	}
@@ -68,7 +73,7 @@ void TcpConnection::handleWrite() {
 }
 
 void TcpConnection::handleClose() {
-	closed_ = true;
+	setState(kDisconnected);
 	watcher_->stop();
 	TcpConnectionPtr guardThis(shared_from_this());
 	disconnectCallback_(guardThis);
@@ -82,8 +87,18 @@ void TcpConnection::handleError() {
 	// LOG_ERROR
 }
 
+void TcpConnection::sendInLoop() {
+
+}
+
 void TcpConnection::shutdownInLoop() {
 	if (watcher_->events() | WatcherEvents::kEventWrite) {
 		socket_->shutdownWrite();
+	}
+}
+
+void TcpConnection::forceCloseInLoop() {
+	if (state_ == kConnected || state_ == kDisconnecting) {
+		handleClose();
 	}
 }

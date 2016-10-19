@@ -48,6 +48,8 @@ private:
 		const InetAddress& peerAddr);
 	~TcpConnection();
 
+	enum State { kDisconnected, kConnecting, kConnected, kDisconnecting };
+
 	void handleRead();
 	void handleWrite();
 	void handleClose();
@@ -57,14 +59,15 @@ private:
 	void shutdownInLoop();
 	void forceCloseInLoop();
 
+	void setState(State state) { state_ = state; }
+
 private:
 	EventLoop* loop_;
+	State state_;
 	std::unique_ptr<Socket> socket_;
 	std::unique_ptr<Watcher> watcher_;
 	const InetAddress localAddr_;
 	const InetAddress peerAddr_;
-	bool established_;
-	bool closed_;
 
 	ConnectCallback connectCallback_;
 	ReadCallback readCallback_;
