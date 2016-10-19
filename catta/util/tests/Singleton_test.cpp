@@ -1,6 +1,6 @@
 #include <catta/util/Singleton.h>
 
-#include <catta/util/noncopyable.h>
+#include <catta/base/noncopyable.h>
 
 #include <thread>
 #include <iostream>

@@ -1,7 +1,7 @@
 #ifndef CATTA_UTIL_SINGLETON_H
 #define CATTA_UTIL_SINGLETON_H
 
-#include <catta/util/noncopyable.h>
+#include <catta/base/noncopyable.h>
 
 #include <mutex>
 #include <cstdlib> // std::atexit

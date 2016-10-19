@@ -1,7 +1,7 @@
 #ifndef CATTA_UTIL_FILEUTIL_H
 #define CATTA_UTIL_FILEUTIL_H
 
-#include <catta/util/noncopyable.h>
+#include <catta/base/noncopyable.h>
 
 #include <string>
 

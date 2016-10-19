@@ -1,7 +1,7 @@
 #ifndef CATTA_UTIL_COUNTDOWNLATCH_H
 #define CATTA_UTIL_COUNTDOWNLATCH_H
 
-#include <catta/util/noncopyable.h>
+#include <catta/base/noncopyable.h>
 
 #include <condition_variable>
 #include <mutex>

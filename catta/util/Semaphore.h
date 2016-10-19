@@ -1,7 +1,7 @@
 #ifndef CATTA_UTIL_SEMPHORE_H
 #define CATTA_UTIL_SEMPHORE_H
 
-#include <catta/util/noncopyable.h>
+#include <catta/base/noncopyable.h>
 
 #include <mutex>
 #include <condition_variable>

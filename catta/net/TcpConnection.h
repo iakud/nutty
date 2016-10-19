@@ -3,7 +3,7 @@
 
 #include <catta/net/InetAddress.h>
 
-#include <catta/util/noncopyable.h>
+#include <catta/base/noncopyable.h>
 
 #include <memory>
 #include <functional>

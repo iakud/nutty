@@ -1,7 +1,7 @@
 #ifndef CATTA_NET_EVENTLOOP_H
 #define CATTA_NET_EVENTLOOP_H
 
-#include <catta/util/noncopyable.h>
+#include <catta/base/noncopyable.h>
 #include <catta/base/Thread.h>
 
 #include <mutex>

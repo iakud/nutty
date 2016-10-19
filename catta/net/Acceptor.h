@@ -4,7 +4,7 @@
 #include <catta/net/Watcher.h>
 #include <catta/net/Socket.h>
 
-#include <catta/util/noncopyable.h>
+#include <catta/base/noncopyable.h>
 
 #include <functional>
 
