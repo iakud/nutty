@@ -24,12 +24,15 @@ int createEventFd() {
 
 EventLoop::EventLoop()
 	: quit_(false)
-	, mutex_()
-	, functors_()
-	, readyList_()
+	, callingPendingFunctors_(false)
+	, threadId_(CurrentThread::tid())
 	, poller_(new EPollPoller())
 	, wakeupFd_(createEventFd())
-	, wakeupWatcher_(new Watcher(this, wakeupFd_)) {
+	, wakeupWatcher_(new Watcher(this, wakeupFd_))
+	, activeWatchers_()
+	, readyList_()
+	, mutex_()
+	, pendingFunctors_() {
 	wakeupWatcher_->setReadCallback(std::bind(&EventLoop::handleWakeup, this));
 	wakeupWatcher_->setEvents(WatcherEvents::kEventRead);
 	wakeupWatcher_->start();
@@ -42,7 +45,9 @@ EventLoop::~EventLoop() {
 
 void EventLoop::quit() {
 	quit_ = true;
-	wakeup();
+	if (!isInLoopThread()) {
+		wakeup();
+	}
 }
 
 void EventLoop::loop() {
@@ -51,16 +56,26 @@ void EventLoop::loop() {
 	while(!quit_) {
 		poller_->poll(activeWatchers_, kPollTime); // poll network event
 		handleActiveWatchers();
-		doFunctors();
+		doPendingFunctors();
 	}
 }
 
-void EventLoop::runInLoop(Functor&& functor) {
+void EventLoop::runInLoop(Functor&& callback) {
+	if (isInLoopThread()) {
+		callback();
+	} else {
+		queueInLoop(std::move(callback));
+	}
+}
+
+void EventLoop::queueInLoop(Functor&& callback) {
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
-		functors_.push_back(functor);
+		pendingFunctors_.push_back(std::move(callback));
 	}
-	wakeup();
+	if (!isInLoopThread() || callingPendingFunctors_) {
+		wakeup();
+	}
 }
 
 void EventLoop::addWatcher(Watcher* watcher) {
@@ -100,15 +115,17 @@ void EventLoop::handleActiveWatchers() {
 	}
 }
 
-void EventLoop::doFunctors() {
+void EventLoop::doPendingFunctors() {
 	std::vector<Functor> functors;
+	callingPendingFunctors_ = true;
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
-		functors.swap(functors_);
+		functors.swap(pendingFunctors_);
 	}
-	for (Functor functor : functors) {
-		functor();
+	for (Functor& callback : functors) {
+		callback();
 	}
+	callingPendingFunctors_ = false;
 }
 
 void EventLoop::wakeup() {

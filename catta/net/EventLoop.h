@@ -2,6 +2,7 @@
 #define CATTA_NET_EVENTLOOP_H
 
 #include <catta/util/noncopyable.h>
+#include <catta/base/Thread.h>
 
 #include <mutex>
 #include <vector>
@@ -25,7 +26,10 @@ public:
 	void loop();
 	void loopOnce();
 
-	void runInLoop(Functor&& functor);
+	void runInLoop(Functor&& callback);
+	void queueInLoop(Functor&& callback);
+
+	bool isInLoopThread() const { return threadId_ == CurrentThread::tid(); }
 
 private:
 	void addWatcher(Watcher* watcher);
@@ -33,19 +37,23 @@ private:
 	void removeWatcher(Watcher* watcher);
 
 	void handleActiveWatchers();
-	void doFunctors();
+	void doPendingFunctors();
 
 	void wakeup();
 	bool handleWakeup();
 
 	bool quit_;
-	std::mutex mutex_;
-	std::vector<Functor> functors_;
-	std::vector<Watcher*> activeWatchers_;
-	std::vector<Watcher*> readyList_;
+	bool callingPendingFunctors_;
+	const pid_t threadId_;
 	std::unique_ptr<EPollPoller> poller_;
 	int wakeupFd_;
 	std::unique_ptr<Watcher> wakeupWatcher_;
+
+	std::vector<Watcher*> activeWatchers_;
+	std::vector<Watcher*> readyList_;
+
+	std::mutex mutex_;
+	std::vector<Functor> pendingFunctors_;
 
 	friend class Watcher;
 }; // end class EventLoop

@@ -31,6 +31,11 @@ public:
 	const InetAddress& peerAddress() const { return peerAddr_; }
 
 	void send(const void* data, int len);
+	void shutdown();
+	void forceClose();
+	
+	void connectEstablished();
+	void connectDestroyed();
 
 private:
 	// for tcpserver and tcpclient
@@ -47,12 +52,19 @@ private:
 	void handleWrite();
 	void handleClose();
 	void handleError();
+
+	void sendInLoop();
+	void shutdownInLoop();
+	void forceCloseInLoop();
+
 private:
 	EventLoop* loop_;
 	std::unique_ptr<Socket> socket_;
 	std::unique_ptr<Watcher> watcher_;
 	const InetAddress localAddr_;
 	const InetAddress peerAddr_;
+	bool established_;
+	bool closed_;
 
 	ConnectCallback connectCallback_;
 	ReadCallback readCallback_;
