@@ -55,6 +55,22 @@ int Socket::connect(const struct sockaddr_in& addr) {
 	return ::connect(sockfd_, reinterpret_cast<const struct sockaddr*>(&addr), static_cast<socklen_t>(sizeof addr));
 }
 
+ssize_t Socket::read(void* buf, size_t count) {
+	return ::read(sockfd_, buf, count);
+}
+
+ssize_t Socket::readv(const struct iovec* iov, int iovcnt) {
+	return ::readv(sockfd_, iov, iovcnt);
+}
+
+ssize_t Socket::write(const void* buf, size_t count) {
+	return ::write(sockfd_, buf, count);
+}
+
+ssize_t Socket::writev(const struct iovec* iov, int iovcnt) {
+	return ::writev(sockfd_, iov, iovcnt);
+}
+
 int Socket::shutdownWrite() {
 	return ::shutdown(sockfd_, SHUT_WR);
 }

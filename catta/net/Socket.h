@@ -24,6 +24,11 @@ public:
 	int accept(struct sockaddr_in& addr);
 	int connect(const struct sockaddr_in& addr);
 
+	ssize_t read(void* buf, size_t count);
+	ssize_t readv(const struct iovec* iov, int iovcnt);
+	ssize_t write(const void* buf, size_t count);
+	ssize_t writev(const struct iovec* iov, int iovcnt);
+
 	int shutdownWrite();
 
 	int setReuseAddr(bool reuseaddr);
