@@ -89,7 +89,23 @@ void TcpConnection::handleError() {
 }
 
 void TcpConnection::sendInLoop(const void* data, size_t len) {
-
+	if (state_ == kDisconnected) {
+		// FIXME : log
+		return;
+	}
+	if (writable_) {
+		ssize_t nwrote = socket_->write(data, len);
+		if (nwrote >= 0) {
+			// static_cast<const char*>(data) + nwrote
+		} else {
+			if (errno != EWOULDBLOCK) {
+				if (errno == EPIPE || errno == ECONNRESET) {
+					return;
+				}
+			}
+			// static_cast<const char*>(data)
+		}
+	}
 }
 
 void TcpConnection::sendInLoop(std::string& data) {

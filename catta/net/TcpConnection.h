@@ -70,6 +70,7 @@ private:
 	std::unique_ptr<Watcher> watcher_;
 	const InetAddress localAddr_;
 	const InetAddress peerAddr_;
+	bool writable_;
 
 	ConnectCallback connectCallback_;
 	ReadCallback readCallback_;
