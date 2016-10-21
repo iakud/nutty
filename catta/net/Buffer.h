@@ -5,7 +5,9 @@ namespace catta {
 
 class Buffer {
 public:
-
+	
+private:
+	
 }; // end class Buffer
 
 class SendBuffer {

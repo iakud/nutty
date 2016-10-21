@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <functional>
+#include <string>
 
 namespace catta {
 
@@ -30,7 +31,7 @@ public:
 	const InetAddress& localAddress() const { return localAddr_; }
 	const InetAddress& peerAddress() const { return peerAddr_; }
 
-	void send(const void* data, int len);
+	void send(const void* data, size_t len);
 	void shutdown();
 	void forceClose();
 	
@@ -55,7 +56,8 @@ private:
 	void handleClose();
 	void handleError();
 
-	void sendInLoop();
+	void sendInLoop(const void* data, size_t len);
+	void sendInLoop(std::string& data);
 	void shutdownInLoop();
 	void forceCloseInLoop();
 

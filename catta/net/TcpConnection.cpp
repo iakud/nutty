@@ -26,12 +26,13 @@ TcpConnection::~TcpConnection() {
 
 }
 
-void TcpConnection::send(const void* data, int len) {
+void TcpConnection::send(const void* data, size_t len) {
 	if (state_ == kConnected) {
 		if (loop_->isInLoopThread()) {
-			sendInLoop();
+			sendInLoop(data, len);
 		} else {
-			loop_->queueInLoop(std::bind(&TcpConnection::sendInLoop, this));
+			void (TcpConnection::*fp)(std::string& data) = &TcpConnection::sendInLoop;
+			loop_->queueInLoop(std::bind(fp, this, std::string(static_cast<const char*>(data), len)));
 		}
 	}
 }
@@ -87,8 +88,12 @@ void TcpConnection::handleError() {
 	// LOG_ERROR
 }
 
-void TcpConnection::sendInLoop() {
+void TcpConnection::sendInLoop(const void* data, size_t len) {
 
+}
+
+void TcpConnection::sendInLoop(std::string& data) {
+	sendInLoop(data.c_str(), data.size());
 }
 
 void TcpConnection::shutdownInLoop() {
