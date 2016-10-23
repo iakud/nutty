@@ -8,6 +8,7 @@ set(CATTANET_SRCS
 	InetAddress.cpp
 	Socket.cpp
 	Acceptor.cpp
+	Buffer.cpp
 	TcpConnection.cpp
 	)
 
