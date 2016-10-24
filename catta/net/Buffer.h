@@ -1,6 +1,10 @@
 #ifndef CATTA_NET_BUFFER_H
 #define CATTA_NET_BUFFER_H
 
+#include <catta/base/noncopyable.h>
+
+#include <cstdint>
+
 #include <unistd.h>
 
 namespace catta {
@@ -27,27 +31,47 @@ private:
 	friend class ListBuffer;
 }; // end class Buffer
 
+class BufferPool : noncopyable {
+public:
+	BufferPool(const uint32_t size)
+		: size_(size)
+		, count_(0) {
+	}
+	~BufferPool() {
+	}
+
+	void put(Buffer* buffer) {
+		if (buffer) {
+			delete buffer;
+		}
+	}
+
+	Buffer* take() {
+		Buffer* buffer = new Buffer();
+		return buffer;
+	}
+
+private:
+	const uint32_t size_;
+	uint32_t count_;
+	Buffer* head_;		// head buffer
+	Buffer* tail_;		// tail buffer
+}; // end class BufferPool
+
 class ListBuffer {
 public:
 	ListBuffer();
 
 	ssize_t write(Socket& socket);
 	ssize_t read(Socket& socket);
-private:
-	ssize_t readv(Socket& socket);
 
+private:
+	BufferPool* pool_;
 	size_t count_;
 	Buffer* head_;
 	Buffer* current_;
 	Buffer* next_;
 }; // end class ListBuffer
-
-class BufferPool {
-public:
-
-private:
-
-}; // end class BufferPool
 
 } // end namespace catta
 

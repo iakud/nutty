@@ -37,10 +37,7 @@ ssize_t ListBuffer::read(Socket& socket) {
 		}
 		return nread;
 	}
-	return readv(socket);
-}
-
-ssize_t ListBuffer::readv(Socket& socket) {
+	
 	struct iovec iov[3];
 	int iovcnt = 0;
 	size_t writable = current_->capacity_ - current_->count_;
@@ -62,12 +59,12 @@ ssize_t ListBuffer::readv(Socket& socket) {
 	}
 
 	if (!next_) {
-		//next_ = 
+		next_ = pool_->take();
 	}
 	iov[iovcnt].iov_base = next_->buffer_;
 	iov[iovcnt].iov_len = next_->capacity_;
 	++iovcnt; // iovcnt <= 3
-	
+
 	const ssize_t nread = socket.readv(iov, iovcnt);
 	if (nread > 0) {
 		if (static_cast<size_t>(nread) < writable) {
