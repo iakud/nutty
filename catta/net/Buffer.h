@@ -16,6 +16,9 @@ public:
 	Buffer();
 	~Buffer();
 
+	void clear();
+	void reset();
+
 private:
 	static const size_t kCapacity = 1024 * 8;
 
@@ -25,28 +28,18 @@ private:
 	size_t read_;
 	Buffer* next_;
 
-	friend class ListBuffer;
+	friend class BufferPool;
+	friend class SendBuffer;
+	friend class ReceiveBuffer;
 }; // end class Buffer
 
 class BufferPool : noncopyable {
 public:
-	BufferPool(const uint32_t size)
-		: size_(size)
-		, count_(0) {
-	}
-	~BufferPool() {
-	}
+	BufferPool(uint32_t capacity);
+	~BufferPool();
 
-	void put(Buffer* buffer) {
-		if (buffer) {
-			delete buffer;
-		}
-	}
-
-	Buffer* take() {
-		Buffer* buffer = new Buffer();
-		return buffer;
-	}
+	void put(Buffer* buffer);
+	Buffer* take();
 
 	Buffer* next() {
 		if (!next_) {
@@ -56,29 +49,49 @@ public:
 	}
 
 private:
-	const uint32_t size_;
+	const uint32_t capacity_;
 	uint32_t count_;
 	Buffer* head_;		// head buffer
 	Buffer* tail_;		// tail buffer
 	Buffer* next_;
 }; // end class BufferPool
 
-class ListBuffer {
+class SendBuffer : noncopyable {
 public:
-	ListBuffer(BufferPool* pool);
-	~ListBuffer();
+	SendBuffer(BufferPool* pool);
+	~SendBuffer();
 
 	void write(const char* buf, size_t count);
-	void read(char* data, size_t count);
-	ssize_t write(Socket& socket);
-	ssize_t read(Socket& socket);
 
 private:
+	ssize_t writeSocket(Socket& socket);
+
 	BufferPool* pool_;
 	size_t count_;
 	Buffer* head_;
 	Buffer* tail_;
-}; // end class ListBuffer
+
+	friend class TcpConnection;
+}; // end class SendBuffer
+
+class ReceiveBuffer : noncopyable {
+public:
+	ReceiveBuffer(BufferPool* pool);
+	~ReceiveBuffer();
+
+	void peek(char* buf, size_t count);
+	void read(char* buf, size_t count);
+
+private:
+	ssize_t readSocket(Socket& socket);
+
+	BufferPool* pool_;
+	size_t count_;
+	Buffer* head_;
+	Buffer* tail_;
+
+	friend class TcpConnection;
+}; // end class ReceiveBuffer
 
 } // end namespace catta
 
