@@ -13,7 +13,8 @@ TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
 	, socket_(new Socket(sockfd))
 	, watcher_(new Watcher(loop, sockfd))
 	, localAddr_(localAddr)
-	, peerAddr_(peerAddr) {
+	, peerAddr_(peerAddr)
+	, sendBuffer_(nullptr) {
 	watcher_->setReadCallback(std::bind(&TcpConnection::handleRead, this));
 	watcher_->setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
 	watcher_->setCloseCallback(std::bind(&TcpConnection::handleClose, this));
@@ -23,16 +24,16 @@ TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
 }
 
 TcpConnection::~TcpConnection() {
-
+	
 }
 
-void TcpConnection::send(const void* data, size_t len) {
+void TcpConnection::send(const void* buf, uint32_t count) {
 	if (state_ == kConnected) {
 		if (loop_->isInLoopThread()) {
-			sendInLoop(data, len);
+			sendInLoop(buf, count);
 		} else {
-			void (TcpConnection::*fp)(std::string& data) = &TcpConnection::sendInLoop;
-			loop_->queueInLoop(std::bind(fp, this, std::string(static_cast<const char*>(data), len)));
+			void (TcpConnection::*fp)(const std::string&) = &TcpConnection::sendInLoop;
+			loop_->queueInLoop(std::bind(fp, this, std::string(static_cast<const char*>(buf), count)));
 		}
 	}
 }
@@ -70,7 +71,21 @@ void TcpConnection::handleRead() {
 }
 
 void TcpConnection::handleWrite() {
+	if (writable_) {
+		return;
+	}
+	int iovcnt = sendBuffer_.size();
+	struct iovec iov[iovcnt];
+	iovcnt = sendBuffer_.fill(iov, iovcnt);
+	ssize_t nwrote = socket_->writev(iov, iovcnt);
+	if (nwrote > 0) {
+		sendBuffer_.retrieve(static_cast<uint32_t>(nwrote));
+		if (sendBuffer_.count() == 0) {
 
+		}
+	} else {
+		// FIXME : log
+	}
 }
 
 void TcpConnection::handleClose() {
@@ -88,28 +103,30 @@ void TcpConnection::handleError() {
 	// LOG_ERROR
 }
 
-void TcpConnection::sendInLoop(const void* data, size_t len) {
+void TcpConnection::sendInLoop(const void* buf, uint32_t count) {
 	if (state_ == kDisconnected) {
 		// FIXME : log
 		return;
 	}
 	if (writable_) {
-		ssize_t nwrote = socket_->write(data, len);
-		if (nwrote >= 0) {
-			// static_cast<const char*>(data) + nwrote
-		} else {
+		ssize_t nwrote = socket_->write(buf, count);
+		if (nwrote < 0) {
 			if (errno != EWOULDBLOCK) {
 				if (errno == EPIPE || errno == ECONNRESET) {
 					return;
 				}
 			}
-			// static_cast<const char*>(data)
+			sendBuffer_.write(static_cast<const char*>(buf), count);
+			writable_ = false;
+		} else {
+			sendBuffer_.write(static_cast<const char*>(buf) + nwrote, count - static_cast<uint32_t>(nwrote));
+			writable_ = false;
 		}
 	}
 }
 
-void TcpConnection::sendInLoop(std::string& data) {
-	sendInLoop(data.c_str(), data.size());
+void TcpConnection::sendInLoop(const std::string& buf) {
+	sendInLoop(buf.c_str(), static_cast<uint32_t>(buf.size()));
 }
 
 void TcpConnection::shutdownInLoop() {

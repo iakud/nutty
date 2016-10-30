@@ -3,29 +3,157 @@
 #include <catta/net/Socket.h>
 
 #include <cstring>
+#include <cstdlib>
 
 using namespace catta;
-
-const size_t Buffer::kCapacity;
-
-Buffer::Buffer()
-	: capacity_(kCapacity)
-	, write_(0)
-	, read_(0)
-	, next_(nullptr) {
-
+/*
+Buffer::Buffer(const char* buf, uint32_t count) {
+	if (buf == nullptr || count == 0) {
+		buffer_ = nullptr;
+		count_ = 0;
+	} else {
+		buffer_ = static_cast<char*>(std::malloc(count));
+		std::memcpy(buffer_, buf, count);
+		count_ = count;
+	}
 }
 
 Buffer::~Buffer() {
+	if (buffer_) {
+		std::free(buffer_);
+	}
+}
 
+Buffer::Buffer(Buffer&& buffer) {
+
+}
+
+LinkedBuffer::LinkedBuffer(const char* buf, uint32_t count)
+	: read_(0)
+	, next_(nullptr) {
+	if (buf == nullptr || count == 0) {
+		buffer_ = nullptr;
+		capacity_ = 0;
+		next_ = nullptr;
+	} else {
+		buffer_ = new char[count];
+		std::memcpy(buffer_, buf, count);
+		capacity_ = count;
+		write_ = count;
+	}
+}
+
+LinkedBuffer::LinkedBuffer(Buffer&& buffer)
+	: buffer_(buffer.buffer_)
+	, capacity_(buffer.count_)
+	, write_(buffer.count_)
+	, read_(0)
+	, next_(nullptr) {
+	buffer.buffer_ = nullptr;
+	buffer.count_ = 0;
+}
+
+LinkedBuffer::~LinkedBuffer() {
+	if (buffer_) {
+		std::free(buffer_);
+	}
+}
+
+SendBuffer::SendBuffer() {
+	
+}
+
+SendBuffer::~SendBuffer() {
+
+}
+
+void SendBuffer::append(const char* buf, uint32_t count) {
+	LinkedBuffer* linkedBuffer = new LinkedBuffer(buf, count);
+	append(linkedBuffer);
+}
+
+void SendBuffer::append(Buffer&& buffer) {
+	LinkedBuffer* linkedBuffer = new LinkedBuffer(std::move(buffer));
+	append(linkedBuffer);
+}
+
+void SendBuffer::append(Buffer&& buffer, uint32_t nwrote) {
+	if (nwrote < buffer.size()) {
+		LinkedBuffer* linkedBuffer = new LinkedBuffer(std::move(buffer));
+		linkedBuffer->retrieve(nwrote);
+		append(linkedBuffer);
+	}
+}
+
+void SendBuffer::append(LinkedBuffer* buffer) {
+	if (tail_) {
+		tail_->next_ = buffer;
+		tail_ = tail_->next_;
+	} else {
+		tail_ = head_ = buffer;
+	}
+	++size_;
+}
+
+int SendBuffer::fill(struct iovec* iov, int iovcnt) {
+	LinkedBuffer* buffer = head_;
+	uint32_t count = 0;
+	int i = 0;
+	while (buffer && i < iovcnt && count < kMaxWrite) {
+		uint32_t writable = buffer->write_ - buffer->read_;
+		iov[i].iov_base = buffer->buffer_ + buffer->read_;
+		iov[i].iov_len = writable;
+		count += writable;
+		++i;
+		buffer = buffer->next_;
+	}
+	return i;
+}
+
+void SendBuffer::retrieve(uint32_t count) {
+	uint32_t remain = count;
+	while (remain > 0) {
+		LinkedBuffer* buffer = head_;
+		uint32_t writable = buffer->write_ - buffer->read_;
+		if (remain < writable) {
+			buffer->retrieve(remain);
+			remain = 0;
+		} else {
+			if (buffer->next_) {
+				head_ = buffer->next_;
+			} else {
+				head_ = tail_ = nullptr;
+			}
+			delete buffer;
+			--size_;
+			remain -= writable;
+		}
+	}
+	count_ -= count;
+}
+
+*/
+
+Buffer::Buffer(uint32_t capacity)
+	: capacity_()
+	, begin_(0)
+	, end_(0)
+	, next_(nullptr) {
+	buffer_ = static_cast<char*>(std::malloc(capacity));
+}
+
+Buffer::~Buffer() {
+	if (buffer_) {
+		std::free(buffer_);
+	}
 }
 
 void Buffer::clear() {
-	read_ = write_ = 0;
+	begin_ = end_ = 0;
 }
 
 void Buffer::reset() {
-	read_ = write_ = 0;
+	begin_ = end_ = 0;
 	next_ = nullptr;	
 }
 
@@ -67,7 +195,7 @@ Buffer* BufferPool::take() {
 		--count_;
 		return buffer;
 	} else {
-		return new Buffer();
+		return new Buffer(1024 * 8);
 	}
 }
 
@@ -81,26 +209,26 @@ SendBuffer::SendBuffer(BufferPool* pool)
 SendBuffer::~SendBuffer() {
 }
 
-void SendBuffer::write(const char* buf, size_t count) {
+void SendBuffer::write(const char* buf, uint32_t count) {
 	if (buf == nullptr || count == 0) {
 		return;
 	}
-	size_t writable = tail_->capacity_ - tail_->write_;
-	size_t writecnt = count < writable ? count : writable;
-	std::memcpy(tail_->buffer_ + tail_->write_, buf, writecnt);
-	size_t nwrite = writecnt;
+	uint32_t writable = tail_->capacity_ - tail_->end_;
+	uint32_t writecnt = count < writable ? count : writable;
+	std::memcpy(tail_->buffer_ + tail_->end_, buf, writecnt);
+	uint32_t nwrite = writecnt;
 	while (nwrite < count) {
 		tail_->next_ = pool_->take();
 		tail_ = tail_->next_;
-		size_t remaincnt = count - nwrite;
+		uint32_t remaincnt = count - nwrite;
 		writecnt = remaincnt < tail_->capacity_ ? remaincnt : tail_->capacity_;
 		std::memcpy(tail_->buffer_, buf + nwrite, writecnt);
-		tail_->write_ = writecnt;
+		tail_->end_ = writecnt;
 		nwrite += writecnt;
 	}
 	count_ += count;
 }
-
+/*
 ssize_t SendBuffer::writeSocket(Socket& socket) {
 	if (!head_->next_) {
 		size_t readable = head_->write_ - head_->read_;
@@ -158,7 +286,9 @@ ssize_t SendBuffer::writeSocket(Socket& socket) {
 	}
 	return nwrite;
 }
+*/
 
+/*
 ReceiveBuffer::ReceiveBuffer(BufferPool* pool)
 	: pool_(pool)
 	, count_(0)
@@ -222,4 +352,4 @@ ssize_t ReceiveBuffer::readSocket(Socket& socket) {
 		count_ += nread;
 	}
 	return nread;
-}
+}*/

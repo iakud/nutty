@@ -2,6 +2,7 @@
 #define CATTA_NET_TCPCONNECTION_H
 
 #include <catta/net/InetAddress.h>
+#include <catta/net/Buffer.h>
 
 #include <catta/base/noncopyable.h>
 
@@ -31,7 +32,7 @@ public:
 	const InetAddress& localAddress() const { return localAddr_; }
 	const InetAddress& peerAddress() const { return peerAddr_; }
 
-	void send(const void* data, size_t len);
+	void send(const void* buf, uint32_t count);
 	void shutdown();
 	void forceClose();
 	
@@ -56,8 +57,8 @@ private:
 	void handleClose();
 	void handleError();
 
-	void sendInLoop(const void* data, size_t len);
-	void sendInLoop(std::string& data);
+	void sendInLoop(const void* buf, uint32_t count);
+	void sendInLoop(const std::string& buf);
 	void shutdownInLoop();
 	void forceCloseInLoop();
 
@@ -71,6 +72,8 @@ private:
 	const InetAddress localAddr_;
 	const InetAddress peerAddr_;
 	bool writable_;
+
+	SendBuffer sendBuffer_;
 
 	ConnectCallback connectCallback_;
 	ReadCallback readCallback_;

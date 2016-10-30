@@ -71,7 +71,7 @@ void EventLoop::runInLoop(Functor&& callback) {
 void EventLoop::queueInLoop(Functor&& callback) {
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
-		pendingFunctors_.push_back(std::move(callback));
+		//pendingFunctors_.push_back(std::move(callback));
 	}
 	if (!isInLoopThread() || callingPendingFunctors_) {
 		wakeup();
