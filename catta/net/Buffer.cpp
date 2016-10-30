@@ -2,6 +2,7 @@
 
 #include <catta/net/Socket.h>
 
+#include <algorithm>
 #include <cstring>
 #include <cstdlib>
 
@@ -213,20 +214,67 @@ void SendBuffer::write(const char* buf, uint32_t count) {
 	if (buf == nullptr || count == 0) {
 		return;
 	}
-	uint32_t writable = tail_->capacity_ - tail_->end_;
-	uint32_t writecnt = count < writable ? count : writable;
-	std::memcpy(tail_->buffer_ + tail_->end_, buf, writecnt);
-	uint32_t nwrite = writecnt;
-	while (nwrite < count) {
+	if (tail_ == nullptr) {
+		head_ = tail_ = pool_->take();
+	}
+	uint32_t writable = std::min(tail_->capacity_ - tail_->end_, count);
+	std::memcpy(tail_->buffer_ + tail_->end_, buf, writable);
+	uint32_t nwrote = writable;
+	while (nwrote < count) {
 		tail_->next_ = pool_->take();
 		tail_ = tail_->next_;
-		uint32_t remaincnt = count - nwrite;
-		writecnt = remaincnt < tail_->capacity_ ? remaincnt : tail_->capacity_;
-		std::memcpy(tail_->buffer_, buf + nwrite, writecnt);
-		tail_->end_ = writecnt;
-		nwrite += writecnt;
+		++size_;
+		writable = std::min(tail_->capacity_, count - nwrote);
+		std::memcpy(tail_->buffer_, buf + nwrote, writable);
+		tail_->end_ = writable;
+		nwrote += writable;
 	}
 	count_ += count;
+}
+
+int SendBuffer::fill(struct iovec* iov, int iovcnt) {
+	Buffer* buffer = head_;
+	uint32_t count = 0;
+	int i = 0;
+	while (buffer && i < iovcnt && count < kMaxWrite) {
+		uint32_t readable = buffer->end_ - buffer->begin_;
+		iov[i].iov_base = buffer->buffer_ + buffer->begin_;
+		iov[i].iov_len = readable;
+		count += readable;
+		++i;
+		buffer = buffer->next_;
+	}
+	return i;
+}
+
+void SendBuffer::retrieve(uint32_t count) {
+	/*
+	uint32_t writable = std::min(buffer->write_ - buffer->read_, count);
+	buffer->retrieve(writable);
+	uint32_t nwrote = writable;
+	while (nwrote < count) {
+
+	}
+
+	uint32_t remain = count;
+	while (remain > 0) {
+		Buffer* buffer = head_;
+		uint32_t writable = buffer->write_ - buffer->read_;
+		if (remain < writable) {
+			buffer->retrieve(remain);
+			remain = 0;
+		} else {
+			if (buffer->next_) {
+				head_ = buffer->next_;
+			} else {
+				head_ = tail_ = nullptr;
+			}
+			delete buffer;
+			--size_;
+			remain -= writable;
+		}
+	}
+	count_ -= count;*/
 }
 /*
 ssize_t SendBuffer::writeSocket(Socket& socket) {

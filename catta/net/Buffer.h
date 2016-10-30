@@ -105,9 +105,7 @@ private:
 };
 */
 
-
-
-class Buffer {
+class Buffer : noncopyable {
 public:
 	Buffer(uint32_t capacity);
 	~Buffer();
@@ -126,6 +124,25 @@ private:
 	friend class SendBuffer;
 	friend class ReceiveBuffer;
 }; // end class Buffer
+
+class ListBuffer : noncopyable {
+public:
+	ListBuffer();
+
+	Buffer* head() { return head_; }
+	Buffer* tail() { return tail_; }
+
+	void pushTail(Buffer* buffer);
+	Buffer* popHead();
+
+	bool empty() { return size_ == 0; }
+	uint32_t size() { return size_; }
+
+private:
+	Buffer* head_;
+	Buffer* tail_;
+	uint32_t size_;
+}; // end class ListBuffer
 
 class BufferPool : noncopyable {
 public:
@@ -163,6 +180,7 @@ public:
 	uint32_t count() { return count_; }
 private:
 	//ssize_t writeSocket(Socket& socket);
+	const static uint32_t kMaxWrite = 64 * 1024;
 
 	BufferPool* pool_;
 	uint32_t size_;
