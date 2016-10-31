@@ -137,8 +137,8 @@ void SendBuffer::retrieve(uint32_t count) {
 
 Buffer::Buffer(uint32_t capacity)
 	: capacity_()
-	, begin_(0)
-	, end_(0)
+	, read_(0)
+	, write_(0)
 	, next_(nullptr) {
 	buffer_ = static_cast<char*>(std::malloc(capacity));
 }
@@ -147,15 +147,6 @@ Buffer::~Buffer() {
 	if (buffer_) {
 		std::free(buffer_);
 	}
-}
-
-void Buffer::clear() {
-	begin_ = end_ = 0;
-}
-
-void Buffer::reset() {
-	begin_ = end_ = 0;
-	next_ = nullptr;	
 }
 
 BufferPool::BufferPool(uint32_t capacity)
@@ -202,9 +193,8 @@ Buffer* BufferPool::take() {
 
 SendBuffer::SendBuffer(BufferPool* pool)
 	: pool_(pool)
-	, count_(0)
-	, head_(nullptr)
-	, tail_(nullptr) {
+	, listBuffer_()
+	, count_(0) {
 }
 
 SendBuffer::~SendBuffer() {
@@ -214,35 +204,37 @@ void SendBuffer::write(const char* buf, uint32_t count) {
 	if (buf == nullptr || count == 0) {
 		return;
 	}
-	if (tail_ == nullptr) {
-		head_ = tail_ = pool_->take();
+	uint32_t writable;
+	uint32_t nwrote = 0;
+	Buffer* buffer = listBuffer_.back();
+	if (buffer) {
+		writable = std::min(buffer->writableBytes(), count);
+		std::memcpy(buffer->dataWrite(), buf, writable);
+		nwrote += writable;
 	}
-	uint32_t writable = std::min(tail_->capacity_ - tail_->end_, count);
-	std::memcpy(tail_->buffer_ + tail_->end_, buf, writable);
-	uint32_t nwrote = writable;
 	while (nwrote < count) {
-		tail_->next_ = pool_->take();
-		tail_ = tail_->next_;
-		++size_;
-		writable = std::min(tail_->capacity_, count - nwrote);
-		std::memcpy(tail_->buffer_, buf + nwrote, writable);
-		tail_->end_ = writable;
+		buffer = pool_->take();
+		writable = std::min(buffer->capacity(), count - nwrote);
+		std::memcpy(buffer->data(), buf + nwrote, writable);
+		buffer->hasWritten(writable);
+
+		listBuffer_.pushBack(buffer);
 		nwrote += writable;
 	}
 	count_ += count;
 }
 
 int SendBuffer::fill(struct iovec* iov, int iovcnt) {
-	Buffer* buffer = head_;
+	Buffer* buffer = listBuffer_.front();
 	uint32_t count = 0;
 	int i = 0;
 	while (buffer && i < iovcnt && count < kMaxWrite) {
-		uint32_t readable = buffer->end_ - buffer->begin_;
-		iov[i].iov_base = buffer->buffer_ + buffer->begin_;
+		uint32_t readable = buffer->readableBytes();
+		iov[i].iov_base = buffer->dataRead();
 		iov[i].iov_len = readable;
-		count += readable;
+		buffer = buffer->next();
 		++i;
-		buffer = buffer->next_;
+		count += readable;
 	}
 	return i;
 }
