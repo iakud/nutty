@@ -7,8 +7,8 @@
 using namespace catta;
 Buffer::Buffer(uint32_t capacity)
 	: capacity_()
-	, read_(0)
-	, write_(0)
+	, readIndex_(0)
+	, writeIndex_(0)
 	, next_(nullptr) {
 	buffer_ = static_cast<char*>(std::malloc(capacity));
 }
@@ -19,24 +19,65 @@ Buffer::~Buffer() {
 	}
 }
 
-ListBuffer::~ListBuffer() {
-	Buffer* buffer = popFront();
+BufferPool::BufferPool(uint32_t capacity)
+	: capacity_(capacity)
+	, count_(0)
+	, head_(nullptr)
+	, tail_(nullptr) {
+}
+
+BufferPool::~BufferPool() {
+	Buffer* buffer = take();
 	while (buffer) {
 		delete buffer;
-		buffer = popFront();
+		buffer = take();
 	}
+}
+
+void BufferPool::put(Buffer* buffer) {
+	if (buffer) {
+		if (count_ < capacity_) {
+			buffer->next_ = nullptr;
+			if (count_ == 0) {
+				head_ = tail_ = buffer;
+			} else {
+				tail_->next_ = buffer;
+				tail_ = buffer;
+			}
+			++count_;
+		} else {
+			delete buffer;
+		}
+	}
+}
+
+Buffer* BufferPool::take() {
+	Buffer* buffer;
+	if (count_ > 0) {
+		buffer = head_;
+		if (head_ == tail_) {
+			head_ = tail_ = nullptr;
+		} else {
+			head_ = head_->next_;
+			buffer->next_ = nullptr;
+		}
+		--count_;
+	} else {
+		buffer = new Buffer(1024 * 8);
+	}
+	return buffer;
 }
 
 SendBuffer::SendBuffer(BufferPool* pool)
 	: pool_(pool)
-	, listBuffer_()
-	, size_(0) {
-}
-
-SendBuffer::~SendBuffer() {
+	, size_(0)
+	, count_(0)
+	, head_(0)
+	, tail_(0) {
 }
 
 void SendBuffer::write(const void* buf, uint32_t count) {
+	/*
 	if (buf == nullptr || count == 0) {
 		return;
 	}
@@ -58,36 +99,42 @@ void SendBuffer::write(const void* buf, uint32_t count) {
 		nwrote += writable;
 	}
 	size_ += count;
+	*/
 }
 
-int SendBuffer::fill(struct iovec* iov, int iovcnt) {
+int SendBuffer::prepareSend(struct iovec* iov, int iovcnt) {
+	/*
 	Buffer* buffer = listBuffer_.front();
-	uint32_t count = 0;
+	uint32_t size = 0;
 	int i = 0;
-	while (buffer && i < iovcnt && count < kMaxWrite) {
+	while (buffer && i < iovcnt && size < kMaxSend) {
 		uint32_t readable = buffer->readableBytes();
 		iov[i].iov_base = buffer->dataRead();
 		iov[i].iov_len = readable;
 		buffer = buffer->next();
 		++i;
-		count += readable;
+		size += readable;
 	}
 	return i;
+	*/
+	return 0;
 }
 
 void SendBuffer::hasSent(uint32_t count) {
+	/*
 	uint32_t readable;
-	uint32_t nread = 0;
-	while (nread < count) {
+	uint32_t nsent = 0;
+	while (nsent < count) {
 		Buffer* buffer = listBuffer_.front();
-		readable = std::min(buffer->readableBytes(), count - nread);
+		readable = std::min(buffer->readableBytes(), count - nsent);
 		buffer->hasRead(readable);
 		if (buffer->readableBytes() == 0) {
 			pool_->put(listBuffer_.popFront());
 		}
-		nread += readable;
+		nsent += readable;
 	}
 	size_ -= count;
+	*/
 }
 
 /*
@@ -215,3 +262,76 @@ ssize_t ReceiveBuffer::readSocket(Socket& socket) {
 	}
 	return nread;
 }*/
+
+ReceiveBuffer::ReceiveBuffer(BufferPool* pool)
+	: pool_(pool)
+	, size_(0)
+	, count_(0)
+	, head_(nullptr)
+	, tail_(nullptr) {
+}
+
+ReceiveBuffer::~ReceiveBuffer() {
+	while (head_) {
+		Buffer* head = head_;
+		head_ = head->next_;
+		pool_->put(head);
+	}
+}
+
+int ReceiveBuffer::prepareReceive(struct iovec* iov, int iovcnt) {
+	int count = 0;
+	uint32_t receiveSize = 0;
+	uint32_t writableSize = tail_->capacity_ - tail_->count_;
+	if (writableSize > 0) {
+		if (tail_->writeIndex_ < tail_->readIndex_) {
+			iov[count].iov_base = tail_->buffer_ + tail_->writeIndex_;
+			iov[count].iov_len = writableSize;
+			++count;
+		} else {
+			iov[count].iov_base = tail_->buffer_ + tail_->writeIndex_;
+			iov[count].iov_len = tail_->capacity_ - tail_->writeIndex_;
+			++count;
+			if (tail_->readIndex_ > 0) {
+				iov[count].iov_base = tail_->buffer_;
+				iov[count].iov_len = tail_->readIndex_;
+				++count;
+			}
+		}
+	}
+	receiveSize += writableSize;
+	Buffer* buffer = tail_;
+	while (receiveSize < kMaxReceive) {
+		buffer->next_ = pool_->take();
+		buffer = buffer->next_;
+		iov[count].iov_base = buffer->buffer_;
+		iov[count].iov_len = buffer->capacity_;
+		++count;
+		receiveSize += buffer->capacity_;
+	}
+	return count;
+}
+
+void ReceiveBuffer::hasReceived(uint32_t count) {
+	uint32_t writableSize = tail_->capacity_ - tail_->count_;
+	if (count < writableSize) {
+		uint32_t writeIndex = tail_->writeIndex_ + count;
+		tail_->writeIndex_ = writeIndex < tail_->capacity_ ? writeIndex : writeIndex - tail_->capacity_;
+		tail_->count_ += count;
+	} else {
+		tail_->writeIndex_ = tail_->readIndex_;
+		tail_->count_ = tail_->capacity_;
+		uint32_t receiveCount = count - writableSize;
+		while (receiveCount > 0) {
+			tail_ = tail_->next_;
+			if (receiveCount < tail_->capacity_) {
+				tail_->count_ = tail_->writeIndex_ = receiveCount;
+				receiveCount = 0;
+			} else {
+				tail_->count_ = tail_->capacity_;
+				receiveCount -= tail_->capacity_;
+			}
+		}
+	}
+	size_ -= count;
+}

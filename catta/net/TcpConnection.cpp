@@ -74,13 +74,13 @@ void TcpConnection::handleWrite() {
 	if (writable_) {
 		return;
 	}
-	int iovcnt = sendBuffer_.size();
+	int iovcnt = sendBuffer_.count();
 	struct iovec iov[iovcnt];
-	iovcnt = sendBuffer_.fill(iov, iovcnt);
+	iovcnt = sendBuffer_.prepareSend(iov, iovcnt);
 	ssize_t nwrote = socket_->writev(iov, iovcnt);
 	if (nwrote > 0) {
 		sendBuffer_.hasSent(static_cast<uint32_t>(nwrote));
-		if (sendBuffer_.count() == 0) {
+		if (sendBuffer_.size() == 0) {
 
 		}
 	} else {
