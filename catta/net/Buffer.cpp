@@ -265,10 +265,9 @@ ssize_t ReceiveBuffer::readSocket(Socket& socket) {
 
 ReceiveBuffer::ReceiveBuffer(BufferPool* pool)
 	: pool_(pool)
-	, size_(0)
-	, count_(0)
-	, head_(nullptr)
-	, tail_(nullptr) {
+	, size_(0) {
+	head_ = tail_ = pool_->take();
+	count_ = 1;
 }
 
 ReceiveBuffer::~ReceiveBuffer() {
@@ -281,7 +280,6 @@ ReceiveBuffer::~ReceiveBuffer() {
 
 int ReceiveBuffer::prepareReceive(struct iovec* iov, int iovcnt) {
 	int count = 0;
-	uint32_t receiveSize = 0;
 	uint32_t writableSize = tail_->capacity_ - tail_->count_;
 	if (writableSize > 0) {
 		if (tail_->writeIndex_ < tail_->readIndex_) {
@@ -299,15 +297,14 @@ int ReceiveBuffer::prepareReceive(struct iovec* iov, int iovcnt) {
 			}
 		}
 	}
-	receiveSize += writableSize;
-	Buffer* buffer = tail_;
-	while (receiveSize < kMaxReceive) {
-		buffer->next_ = pool_->take();
-		buffer = buffer->next_;
-		iov[count].iov_base = buffer->buffer_;
-		iov[count].iov_len = buffer->capacity_;
+	if (writableSize < kMaxReceive) {
+		if (tail_->next_ == nullptr) {
+			tail_->next_ = pool_->take();	
+		}
+		Buffer* next = tail_->next_;
+		iov[count].iov_base = next->buffer_;
+		iov[count].iov_len = next->capacity_;
 		++count;
-		receiveSize += buffer->capacity_;
 	}
 	return count;
 }
@@ -321,15 +318,13 @@ void ReceiveBuffer::hasReceived(uint32_t count) {
 	} else {
 		tail_->writeIndex_ = tail_->readIndex_;
 		tail_->count_ = tail_->capacity_;
-		uint32_t receiveCount = count - writableSize;
-		while (receiveCount > 0) {
+		if (count > writableSize) {
 			tail_ = tail_->next_;
+			uint32_t receiveCount = count - writableSize;
 			if (receiveCount < tail_->capacity_) {
 				tail_->count_ = tail_->writeIndex_ = receiveCount;
-				receiveCount = 0;
 			} else {
 				tail_->count_ = tail_->capacity_;
-				receiveCount -= tail_->capacity_;
 			}
 		}
 	}
