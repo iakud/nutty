@@ -79,7 +79,7 @@ void TcpConnection::handleWrite() {
 	iovcnt = sendBuffer_.fill(iov, iovcnt);
 	ssize_t nwrote = socket_->writev(iov, iovcnt);
 	if (nwrote > 0) {
-		sendBuffer_.retrieve(static_cast<uint32_t>(nwrote));
+		sendBuffer_.hasSent(static_cast<uint32_t>(nwrote));
 		if (sendBuffer_.count() == 0) {
 
 		}
