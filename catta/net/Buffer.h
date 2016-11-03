@@ -12,8 +12,10 @@ namespace catta {
 
 class Buffer : noncopyable {
 public:
-	Buffer(uint32_t capacity);
+	Buffer();
 	~Buffer();
+
+	static const uint32_t kCapacity = 8 * 1024;
 
 	char* buffer_;
 	uint32_t capacity_;
@@ -51,8 +53,7 @@ private:
 	void hasSent(uint32_t count);
 
 private:
-	const static uint32_t kBufferSize = 8 * 1024;
-	const static uint32_t kMaxSend = 64 * 1024;
+	static const uint32_t kMaxSend = 64 * 1024;
 
 	BufferPool* pool_;
 	uint32_t size_;
@@ -79,15 +80,13 @@ private:
 	void hasReceived(uint32_t count);
 
 private:
-	const static uint32_t kBufferSize = 8 * 1024;
-	const static uint32_t kMaxReceive = 8 * 1024;
+	static const uint32_t kMaxReceive = 8 * 1024;
 
 	BufferPool* pool_;
 	uint32_t size_;
 	Buffer* head_;
 	Buffer* tail_;
 	struct iovec* iov_;
-	int iovcnt_;
 
 	friend class TcpConnection;
 }; // end class ReceiveBuffer
