@@ -74,6 +74,7 @@ private:
 	bool writable_;
 
 	SendBuffer sendBuffer_;
+	ReceiveBuffer receiveBuffer_;
 
 	ConnectCallback connectCallback_;
 	ReadCallback readCallback_;

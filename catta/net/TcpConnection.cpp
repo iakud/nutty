@@ -14,7 +14,8 @@ TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
 	, watcher_(new Watcher(loop, sockfd))
 	, localAddr_(localAddr)
 	, peerAddr_(peerAddr)
-	, sendBuffer_(nullptr) {
+	, sendBuffer_(nullptr)
+	, receiveBuffer_(nullptr) {
 	watcher_->setReadCallback(std::bind(&TcpConnection::handleRead, this));
 	watcher_->setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
 	watcher_->setCloseCallback(std::bind(&TcpConnection::handleClose, this));
@@ -67,16 +68,22 @@ void TcpConnection::connectDestroyed() {
 }
 
 void TcpConnection::handleRead() {
-
+	struct iovec* iov;
+	int iovcnt;
+	receiveBuffer_.prepareReceive(&iov, &iovcnt);
+	ssize_t nread = socket_->readv(iov, iovcnt);
+	if (nread > 0) {
+		receiveBuffer_.hasReceived(static_cast<uint32_t>(nread));
+	}
 }
 
 void TcpConnection::handleWrite() {
 	if (writable_) {
 		return;
 	}
-	int iovcnt = sendBuffer_.count();
-	struct iovec iov[iovcnt];
-	iovcnt = sendBuffer_.prepareSend(iov, iovcnt);
+	struct iovec* iov;
+	int iovcnt;
+	sendBuffer_.prepareSend(&iov, &iovcnt);
 	ssize_t nwrote = socket_->writev(iov, iovcnt);
 	if (nwrote > 0) {
 		sendBuffer_.hasSent(static_cast<uint32_t>(nwrote));

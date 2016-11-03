@@ -1,7 +1,5 @@
 #include <catta/net/Buffer.h>
 
-#include <catta/net/Socket.h>
-
 #include <cstring>
 
 using namespace catta;
@@ -71,38 +69,59 @@ Buffer* BufferPool::take() {
 SendBuffer::SendBuffer(BufferPool* pool)
 	: pool_(pool)
 	, size_(0)
-	, count_(0)
-	, head_(0)
-	, tail_(0) {
+	, iovcnt_(0) {
+	head_ = tail_ = pool_->take();
+	int count = kMaxSend / kBufferSize + (kMaxSend % kBufferSize > 2 ? 1 : 0) + 2;
+	iov_ = new struct iovec[count];
+}
+
+SendBuffer::~SendBuffer() {
+	while (head_) {
+		Buffer* head = head_;
+		head_ = head->next_;
+		pool_->put(head);
+	}
+	if (iov_) {
+		delete iov_;
+	}
 }
 
 void SendBuffer::write(const void* buf, uint32_t count) {
-	/*
 	if (buf == nullptr || count == 0) {
 		return;
 	}
-	uint32_t writable;
-	uint32_t nwrote = 0;
-	Buffer* buffer = listBuffer_.back();
-	if (buffer) {
-		writable = std::min(buffer->writableBytes(), count);
-		std::memcpy(buffer->dataWrite(), buf, writable);
-		nwrote += writable;
-	}
-	while (nwrote < count) {
-		buffer = pool_->take();
-		writable = std::min(buffer->capacity(), count - nwrote);
-		std::memcpy(buffer->data(), static_cast<const char*>(buf) + nwrote, writable);
-		buffer->hasWritten(writable);
 
-		listBuffer_.pushBack(buffer);
-		nwrote += writable;
+	uint32_t writableSize = std::min(tail_->capacity_ - tail_->count_, count);
+	if (writableSize > 0) {
+		uint32_t writeSize = tail_->capacity_ - tail_->writeIndex_;
+		if (writableSize < writeSize) {
+			std::memcpy(tail_->buffer_ + tail_->writeIndex_, buf, writableSize);
+			tail_->writeIndex_ += count;
+		} else {
+			std::memcpy(tail_->buffer_ + tail_->writeIndex_, buf, writeSize);
+			tail_->writeIndex_ = writableSize - writeSize;
+			if (writableSize > writeSize) {
+				std::memcpy(tail_->buffer_, static_cast<const char*>(buf) + writeSize, tail_->writeIndex_);
+			}
+		}
+		tail_->count_ += writableSize;
+	}
+	uint32_t nwrote = writableSize;
+	while (nwrote < count) {
+		// FIXME
+		if (tail_->next_ == nullptr) {
+			tail_->next_ = pool_->take();	
+		}
+		tail_ = tail_->next_;
+		writableSize = std::min(tail_->capacity_, count - nwrote);
+		std::memcpy(tail_->buffer_, static_cast<const char*>(buf) + nwrote, writableSize);
+		tail_->count_ = tail_->writeIndex_ = writableSize;
+		nwrote += writableSize;
 	}
 	size_ += count;
-	*/
 }
 
-int SendBuffer::prepareSend(struct iovec* iov, int iovcnt) {
+void SendBuffer::prepareSend(struct iovec** iov, int* iovcnt) {
 	/*
 	Buffer* buffer = listBuffer_.front();
 	uint32_t size = 0;
@@ -117,7 +136,7 @@ int SendBuffer::prepareSend(struct iovec* iov, int iovcnt) {
 	}
 	return i;
 	*/
-	return 0;
+
 }
 
 void SendBuffer::hasSent(uint32_t count) {
@@ -197,77 +216,13 @@ ssize_t SendBuffer::writeSocket(Socket& socket) {
 }
 */
 
-/*
 ReceiveBuffer::ReceiveBuffer(BufferPool* pool)
 	: pool_(pool)
-	, count_(0)
-	, head_(nullptr)
-	, tail_(nullptr) {
-}
-
-ReceiveBuffer::~ReceiveBuffer() {
-}
-
-void ReceiveBuffer::peek(char* buf, size_t count) {
-	
-}
-
-void ReceiveBuffer::read(char* buf, size_t count) {
-	
-}
-
-ssize_t ReceiveBuffer::readSocket(Socket& socket) {
-	if (tail_->write_ == 0) {
-		const ssize_t nread = socket.read(tail_->buffer_, tail_->capacity_);
-		if (nread > 0) {
-			tail_->write_ = nread;
-			count_ += nread;
-		}
-		return nread;
-	}
-	
-	if (tail_->write_ == tail_->capacity_) {
-		Buffer* next = pool_->next();
-		const ssize_t nread = socket.read(next->buffer_, next->capacity_);
-		if (nread > 0) {
-			tail_->next_ = next;
-			tail_ = next;
-			tail_->write_ = nread;
-			count_ += nread;
-		}
-		return nread;
-	}
-
-	struct iovec iov[2];
-	Buffer* next = pool_->next();
-	size_t writable = tail_->capacity_ - tail_->write_;
-	iov[0].iov_base = tail_->buffer_ + tail_->write_;
-	iov[0].iov_len = writable;
-	iov[1].iov_base = next->buffer_;
-	iov[1].iov_len = next->capacity_;
-
-	const ssize_t nread = socket.readv(iov, 2);
-	if (nread > 0) {
-		if (static_cast<size_t>(nread) < writable) {
-			tail_->write_ += nread;
-		} else {
-			tail_->write_ = tail_->capacity_;
-			if (static_cast<size_t>(nread) > writable)  {
-				tail_->next_ = next;
-				tail_ = next;
-				tail_->write_ = nread - writable;
-			}
-		}
-		count_ += nread;
-	}
-	return nread;
-}*/
-
-ReceiveBuffer::ReceiveBuffer(BufferPool* pool)
-	: pool_(pool)
-	, size_(0) {
+	, size_(0)
+	, iovcnt_(0) {
 	head_ = tail_ = pool_->take();
-	count_ = 1;
+	int count = kMaxReceive / kBufferSize + (kMaxReceive % kBufferSize > 2 ? 1 : 0) + 2;
+	iov_ = new struct iovec[count];
 }
 
 ReceiveBuffer::~ReceiveBuffer() {
@@ -276,56 +231,64 @@ ReceiveBuffer::~ReceiveBuffer() {
 		head_ = head->next_;
 		pool_->put(head);
 	}
+	if (iov_) {
+		delete iov_;
+	}
 }
 
-int ReceiveBuffer::prepareReceive(struct iovec* iov, int iovcnt) {
-	int count = 0;
+void ReceiveBuffer::prepareReceive(struct iovec** iov, int* iovcnt) {
+	iovcnt_ = 0;
 	uint32_t writableSize = tail_->capacity_ - tail_->count_;
 	if (writableSize > 0) {
 		if (tail_->writeIndex_ < tail_->readIndex_) {
-			iov[count].iov_base = tail_->buffer_ + tail_->writeIndex_;
-			iov[count].iov_len = writableSize;
-			++count;
+			iov_[iovcnt_].iov_base = tail_->buffer_ + tail_->writeIndex_;
+			iov_[iovcnt_].iov_len = writableSize;
+			++iovcnt_;
 		} else {
-			iov[count].iov_base = tail_->buffer_ + tail_->writeIndex_;
-			iov[count].iov_len = tail_->capacity_ - tail_->writeIndex_;
-			++count;
+			iov_[iovcnt_].iov_base = tail_->buffer_ + tail_->writeIndex_;
+			iov_[iovcnt_].iov_len = tail_->capacity_ - tail_->writeIndex_;
+			++iovcnt_;
 			if (tail_->readIndex_ > 0) {
-				iov[count].iov_base = tail_->buffer_;
-				iov[count].iov_len = tail_->readIndex_;
-				++count;
+				iov_[iovcnt_].iov_base = tail_->buffer_;
+				iov_[iovcnt_].iov_len = tail_->readIndex_;
+				++iovcnt_;
 			}
 		}
 	}
+	// FIXME
 	if (writableSize < kMaxReceive) {
 		if (tail_->next_ == nullptr) {
 			tail_->next_ = pool_->take();	
 		}
 		Buffer* next = tail_->next_;
-		iov[count].iov_base = next->buffer_;
-		iov[count].iov_len = next->capacity_;
-		++count;
+		iov_[iovcnt_].iov_base = next->buffer_;
+		iov_[iovcnt_].iov_len = next->capacity_;
+		++iovcnt_;
 	}
-	return count;
+	*iov = iov_;
+	*iovcnt = iovcnt_;
 }
 
 void ReceiveBuffer::hasReceived(uint32_t count) {
-	uint32_t writableSize = tail_->capacity_ - tail_->count_;
-	if (count < writableSize) {
-		uint32_t writeIndex = tail_->writeIndex_ + count;
-		tail_->writeIndex_ = writeIndex < tail_->capacity_ ? writeIndex : writeIndex - tail_->capacity_;
-		tail_->count_ += count;
-	} else {
-		tail_->writeIndex_ = tail_->readIndex_;
-		tail_->count_ = tail_->capacity_;
-		if (count > writableSize) {
-			tail_ = tail_->next_;
-			uint32_t receiveCount = count - writableSize;
-			if (receiveCount < tail_->capacity_) {
-				tail_->count_ = tail_->writeIndex_ = receiveCount;
-			} else {
-				tail_->count_ = tail_->capacity_;
-			}
+	uint32_t writableSize = std::min(tail_->capacity_ - tail_->count_, count);
+	if (writableSize > 0) {
+		uint32_t writeSize = tail_->capacity_ - tail_->writeIndex_;
+		if (writableSize < writeSize) {
+			tail_->writeIndex_ += count;
+		} else {
+			tail_->writeIndex_ = writableSize - writeSize;
+		}
+		tail_->count_ += writableSize;
+	}
+	uint32_t nwrote = writableSize;
+	// FIXME
+	if (nwrote < count) {
+		tail_ = tail_->next_;
+		uint32_t receiveCount = count - nwrote;
+		if (receiveCount < tail_->capacity_) {
+			tail_->count_ = tail_->writeIndex_ = receiveCount;
+		} else {
+			tail_->count_ = tail_->capacity_;
 		}
 	}
 	size_ -= count;

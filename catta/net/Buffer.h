@@ -6,9 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <unistd.h>
-
-struct iovec;
-class Socket;
+#include <sys/uio.h>
 
 namespace catta {
 
@@ -43,23 +41,25 @@ private:
 class SendBuffer : noncopyable {
 public:
 	SendBuffer(BufferPool* pool);
+	~SendBuffer();
 
 	void write(const void* buf, uint32_t count);
-	uint32_t count() { return count_; }
 	uint32_t size() { return size_; }
 
 private:
-	int prepareSend(struct iovec* iov, int iovcnt);
+	void prepareSend(struct iovec** iov, int* iovcnt);
 	void hasSent(uint32_t count);
 
 private:
+	const static uint32_t kBufferSize = 8 * 1024;
 	const static uint32_t kMaxSend = 64 * 1024;
 
 	BufferPool* pool_;
 	uint32_t size_;
-	uint32_t count_;
 	Buffer* head_;
 	Buffer* tail_;
+	struct iovec* iov_;
+	int iovcnt_;
 
 	friend class TcpConnection;
 }; // end class SendBuffer
@@ -75,17 +75,19 @@ public:
 	uint32_t size() { return size_; }
 
 private:
-	int prepareReceive(struct iovec* iov, int iovcnt);
+	void prepareReceive(struct iovec** iov, int* iovcnt);
 	void hasReceived(uint32_t count);
 
 private:
+	const static uint32_t kBufferSize = 8 * 1024;
 	const static uint32_t kMaxReceive = 8 * 1024;
 
 	BufferPool* pool_;
 	uint32_t size_;
-	uint32_t count_;
 	Buffer* head_;
 	Buffer* tail_;
+	struct iovec* iov_;
+	int iovcnt_;
 
 	friend class TcpConnection;
 }; // end class ReceiveBuffer
