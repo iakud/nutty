@@ -3,6 +3,7 @@
 #include <cstring>
 
 using namespace catta;
+
 Buffer::Buffer()
 	: capacity_(kCapacity)
 	, readIndex_(0)
@@ -93,19 +94,20 @@ void SendBuffer::write(const void* buf, uint32_t count) {
 
 	uint32_t writableSize = std::min(tail_->capacity_ - tail_->count_, count);
 	if (writableSize > 0) {
-		// FIXME
-		// if (tail_->readIndex_ < tail_->writeIndex_)
-
-		// else
-		uint32_t writeSize = tail_->capacity_ - tail_->writeIndex_;
-		if (writableSize < writeSize) {
+		if (tail_->writeIndex_ < tail_->readIndex_) {
 			std::memcpy(tail_->buffer_ + tail_->writeIndex_, buf, writableSize);
-			tail_->writeIndex_ += count;
+			tail_->writeIndex_ += writableSize;
 		} else {
-			std::memcpy(tail_->buffer_ + tail_->writeIndex_, buf, writeSize);
-			tail_->writeIndex_ = writableSize - writeSize;
-			if (writableSize > writeSize) {
-				std::memcpy(tail_->buffer_, static_cast<const char*>(buf) + writeSize, tail_->writeIndex_);
+			uint32_t writeSize = tail_->capacity_ - tail_->writeIndex_;
+			if (writableSize < writeSize) {
+				std::memcpy(tail_->buffer_ + tail_->writeIndex_, buf, writableSize);
+				tail_->writeIndex_ += writableSize;
+			} else {
+				std::memcpy(tail_->buffer_ + tail_->writeIndex_, buf, writeSize);
+				tail_->writeIndex_ = writableSize - writeSize;
+				if (tail_->writeIndex_ > 0) {
+					std::memcpy(tail_->buffer_, static_cast<const char*>(buf) + writeSize, tail_->writeIndex_);
+				}
 			}
 		}
 		tail_->count_ += writableSize;
@@ -113,7 +115,7 @@ void SendBuffer::write(const void* buf, uint32_t count) {
 	uint32_t nwrote = writableSize;
 	while (nwrote < count) {
 		if (tail_->next_ == nullptr) {
-			tail_->next_ = pool_->take();	
+			tail_->next_ = pool_->take();
 		}
 		tail_ = tail_->next_;
 		writableSize = std::min(tail_->capacity_, count - nwrote);
@@ -301,12 +303,15 @@ void ReceiveBuffer::prepareReceive(struct iovec** iov, int* iovcnt) {
 void ReceiveBuffer::hasReceived(uint32_t count) {
 	uint32_t writableSize = std::min(tail_->capacity_ - tail_->count_, count);
 	if (writableSize > 0) {
-		// FIXME
-		uint32_t writeSize = tail_->capacity_ - tail_->writeIndex_;
-		if (writableSize < writeSize) {
-			tail_->writeIndex_ += count;
+		if (tail_->writeIndex_ < tail_->readIndex_) {
+			tail_->writeIndex_ += writableSize;
 		} else {
-			tail_->writeIndex_ = writableSize - writeSize;
+			uint32_t writeSize = tail_->capacity_ - tail_->writeIndex_;
+			if (writableSize < writeSize) {
+				tail_->writeIndex_ += writableSize;
+			} else {
+				tail_->writeIndex_ = writableSize - writeSize;
+			}
 		}
 		tail_->count_ += writableSize;
 	}
