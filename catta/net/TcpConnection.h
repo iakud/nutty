@@ -44,12 +44,11 @@ private:
 	typedef std::function<void(TcpConnectionPtr)> CloseCallback;
 
 private:
-	explicit TcpConnection(EventLoop* loop,
-		int sockfd,
-		const InetAddress& localAddr,
-		const InetAddress& peerAddr);
+	explicit TcpConnection(EventLoop* loop, int sockfd,
+		const InetAddress& localAddr, const InetAddress& peerAddr);
 	~TcpConnection();
 
+	typedef std::shared_ptr<Buffer> BufferPtr;
 	enum State { kDisconnected, kConnecting, kConnected, kDisconnecting };
 
 	void handleRead();
@@ -58,7 +57,7 @@ private:
 	void handleError();
 
 	void sendInLoop(const void* buf, uint32_t count);
-	void sendInLoop(const std::string& buf);
+	void sendInLoop(BufferPtr& buffer);
 	void shutdownInLoop();
 	void forceCloseInLoop();
 
