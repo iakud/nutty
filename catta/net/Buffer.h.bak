@@ -40,6 +40,14 @@ private:
 	Buffer* tail_;
 }; // end class BufferPool
 
+class ListBuffer : noncopyable {
+public:
+
+private:
+	Buffer* head_;
+	Buffer* tail_;
+}; // end class ListBuffer
+
 class SendBuffer : noncopyable {
 public:
 	SendBuffer(BufferPool* pool);
@@ -58,6 +66,7 @@ private:
 	BufferPool* pool_;
 	uint32_t size_;
 	Buffer* head_;
+	Buffer* current_;
 	Buffer* tail_;
 	struct iovec* iov_;
 	int iovcnt_;
@@ -85,6 +94,7 @@ private:
 	BufferPool* pool_;
 	uint32_t size_;
 	Buffer* head_;
+	Buffer* current_;
 	Buffer* tail_;
 	struct iovec* iov_;
 
