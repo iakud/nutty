@@ -34,7 +34,6 @@ void TcpConnection::send(const void* buf, uint32_t count) {
 			sendInLoop(buf, count);
 		} else {
 			void (TcpConnection::*fp)(BufferPtr&) = &TcpConnection::sendInLoop;
-
 			loop_->queueInLoop(std::bind(fp, this, std::make_shared<Buffer>(buf, count)));
 		}
 	}
@@ -124,19 +123,35 @@ void TcpConnection::sendInLoop(const void* buf, uint32_t count) {
 					return;
 				}
 			}
-			//sendBuffer_.write(static_cast<const char*>(buf), count);
+			sendBuffer_.append(buf, count);
 			writable_ = false;
 		} else {
-			//sendBuffer_.write(static_cast<const char*>(buf) + nwrote, count - static_cast<uint32_t>(nwrote));
+			sendBuffer_.append(static_cast<const char*>(buf) + nwrote, count - static_cast<uint32_t>(nwrote));
 			writable_ = false;
 		}
 	}
 }
 
 void TcpConnection::sendInLoop(BufferPtr& buffer) {
-	// FIXME : append after send
-	sendBuffer_.append(std::move(*buffer));
-	// sendInLoop(buf.c_str(), static_cast<uint32_t>(buf.size()));
+	if (state_ == kDisconnected) {
+		// FIXME : log
+		return;
+	}
+	if (writable_) {
+		ssize_t nwrote = socket_->write(buffer->data(), buffer->size());
+		if (nwrote < 0) {
+			if (errno != EWOULDBLOCK) {
+				if (errno == EPIPE || errno == ECONNRESET) {
+					return;
+				}
+			}
+			sendBuffer_.append(std::move(*buffer));
+			writable_ = false;
+		} else {
+			sendBuffer_.append(std::move(*buffer), static_cast<uint32_t>(nwrote));
+			writable_ = false;
+		}
+	}
 }
 
 void TcpConnection::shutdownInLoop() {
