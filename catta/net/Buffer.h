@@ -5,7 +5,11 @@
 
 #include <cstdint>
 
+#include <unistd.h>
+
 namespace catta {
+
+class Socket;
 
 class Buffer : noncopyable {
 public:
@@ -97,8 +101,13 @@ public:
 	void append(const void* buf, uint32_t count);
 	void append(Buffer&& buffer);
 	void append(Buffer&& buffer, uint32_t offset);
+
+	ssize_t send(Socket& socket);
 private:
+	static const uint32_t kMaxSend = 64 * 1024;
+
 	ListBuffer listBuffer_;
+	uint32_t size_;
 }; // end class SendBuffer
 
 class ReceiveBuffer : noncopyable {
