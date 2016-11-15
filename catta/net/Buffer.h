@@ -7,9 +7,9 @@
 
 #include <unistd.h>
 
-namespace catta {
+struct iovec;
 
-class Socket;
+namespace catta {
 
 class Buffer : noncopyable {
 public:
@@ -98,16 +98,32 @@ private:
 
 class SendBuffer : noncopyable {
 public:
+	SendBuffer();
+	~SendBuffer();
+
 	void append(const void* buf, uint32_t count);
 	void append(Buffer&& buffer);
 	void append(Buffer&& buffer, uint32_t offset);
 
-	ssize_t send(Socket& socket);
+	void prepareSend();
+
+	uint32_t size() { return size_; }
+	const struct iovec* iov() { return iov_; }
+	int iovcnt() { return iovcnt_; }
+
 private:
+	void resize(int iovsize);
+
+private:
+	static const int kIovSizeInit = 2;
+	static const int kIovSizeMax = 1024;
 	static const uint32_t kMaxSend = 64 * 1024;
 
 	ListBuffer listBuffer_;
 	uint32_t size_;
+	struct iovec* iov_;
+	int iovsize_;
+	int iovcnt_;
 }; // end class SendBuffer
 
 class ReceiveBuffer : noncopyable {

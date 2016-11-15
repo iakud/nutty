@@ -81,18 +81,16 @@ void TcpConnection::handleWrite() {
 	if (writable_) {
 		return;
 	}
-	//struct iovec* iov;
-	//int iovcnt;
-	//sendBuffer_.prepareSend(&iov, &iovcnt);
-	//ssize_t nwrote = socket_->writev(iov, iovcnt);
-	//if (nwrote > 0) {
-	//	sendBuffer_.hasSent(static_cast<uint32_t>(nwrote));
-	//	if (sendBuffer_.size() == 0) {
+	sendBuffer_.prepareSend();
+	ssize_t nwrote = socket_->writev(sendBuffer_.iov(), sendBuffer_.iovcnt());
+	if (nwrote > 0) {
+		// sendBuffer_.hasSent(static_cast<uint32_t>(nwrote));
+		if (sendBuffer_.size() == 0) {
 
-	//	}
-	//} else {
+		}
+	} else {
 		// FIXME : log
-	//}
+	}
 }
 
 void TcpConnection::handleClose() {

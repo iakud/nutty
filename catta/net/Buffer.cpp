@@ -1,9 +1,9 @@
 #include <catta/net/Buffer.h>
 
-#include <catta/net/Socket.h>
-
 #include <cstring>
 #include <memory>
+
+#include <arpa/inet.h>
 
 using namespace catta;
 
@@ -69,6 +69,19 @@ ListBuffer::~ListBuffer() {
 	}
 }
 
+SendBuffer::SendBuffer()
+	: size_(0)
+	, iovsize_(kIovSizeInit)
+	, iovcnt_(0) {
+	iov_ = static_cast<struct iovec*>(std::malloc(sizeof(struct iovec) * kIovSizeInit));
+}
+
+SendBuffer::~SendBuffer() {
+	if (iov_) {
+		std::free(iov_);
+	}
+}
+
 void SendBuffer::append(const void* buf, uint32_t count) {
 	LinkedBuffer* linkedBuffer = new LinkedBuffer(buf, count);
 	listBuffer_.pushBack(linkedBuffer);
@@ -84,17 +97,27 @@ void SendBuffer::append(Buffer&& buffer, uint32_t offset) {
 	listBuffer_.pushBack(linkedBuffer);
 }
 
-ssize_t SendBuffer::send(Socket& socket) {
-	iovec iov[listBuffer_.size()];
-	uint32_t iovcnt = 0;
+void SendBuffer::prepareSend() {
+	if (iovsize_ < static_cast<int>(listBuffer_.size()) && iovsize_ < kIovSizeMax) {
+		resize(iovsize_ * 2);
+	}
+	iovcnt_ = 0;
 	uint32_t nwrote = 0;
 	LinkedBuffer* linkedBuffer = listBuffer_.front();
-	while (linkedBuffer && iovcnt < listBuffer_.size() && nwrote < kMaxSend) {
+	while (linkedBuffer && iovcnt_ < iovsize_ && nwrote < kMaxSend) {
 		uint32_t readableSize = linkedBuffer->readableSize();
-		iov[iovcnt].iov_base = linkedBuffer->dataRead();
-		iov[iovcnt].iov_len = readableSize;
+		iov_[iovcnt_].iov_base = linkedBuffer->dataRead();
+		iov_[iovcnt_].iov_len = readableSize;
+		++iovcnt_;
 		nwrote += readableSize;
-		++iovcnt;
+		linkedBuffer = linkedBuffer->next();
 	}
-	return socket.writev(iov, iovcnt);
+}
+
+void SendBuffer::resize(int iovsize) {
+	if (iov_) {
+		std::free(iov_);
+	}
+	iov_ = static_cast<struct iovec*>(std::malloc(sizeof(struct iovec) * iovsize));
+	iovsize_ = iovsize;
 }
