@@ -73,7 +73,7 @@ SendBuffer::SendBuffer()
 	: size_(0)
 	, iovsize_(kIovSizeInit)
 	, iovcnt_(0) {
-	iov_ = static_cast<struct iovec*>(std::malloc(sizeof(struct iovec) * kIovSizeInit));
+	iov_ = static_cast<struct iovec*>(std::malloc(sizeof(struct iovec) * iovsize_));
 }
 
 SendBuffer::~SendBuffer() {
@@ -85,16 +85,19 @@ SendBuffer::~SendBuffer() {
 void SendBuffer::append(const void* buf, uint32_t count) {
 	LinkedBuffer* linkedBuffer = new LinkedBuffer(buf, count);
 	listBuffer_.pushBack(linkedBuffer);
+	size_ += linkedBuffer->readableSize();
 }
 
 void SendBuffer::append(Buffer&& buffer) {
 	LinkedBuffer* linkedBuffer = new LinkedBuffer(std::move(buffer));
 	listBuffer_.pushBack(linkedBuffer);
+	size_ += linkedBuffer->readableSize();
 }
 
 void SendBuffer::append(Buffer&& buffer, uint32_t offset) {
 	LinkedBuffer* linkedBuffer = new LinkedBuffer(std::move(buffer), offset);
 	listBuffer_.pushBack(linkedBuffer);
+	size_ += linkedBuffer->readableSize();
 }
 
 void SendBuffer::prepareSend() {
@@ -114,10 +117,76 @@ void SendBuffer::prepareSend() {
 	}
 }
 
+void SendBuffer::hasSent(uint32_t count) {
+	uint32_t nwrote = 0;
+	while (!listBuffer_.empty() && nwrote < count) {
+		LinkedBuffer* linkedBuffer = listBuffer_.front();
+		uint32_t readableSize = std::min(linkedBuffer->readableSize(), count - nwrote);
+		linkedBuffer->hasRead(readableSize);
+		if (linkedBuffer->empty()) {
+			listBuffer_.popFront();
+			delete linkedBuffer;
+		}
+		nwrote += readableSize;
+	}
+	size_ -= nwrote;
+}
+
 void SendBuffer::resize(int iovsize) {
 	if (iov_) {
 		std::free(iov_);
 	}
 	iov_ = static_cast<struct iovec*>(std::malloc(sizeof(struct iovec) * iovsize));
 	iovsize_ = iovsize;
+}
+
+ReceiveBuffer::ReceiveBuffer()
+	: size_(0)
+	, iovsize_(kMaxReceive/kReceiveSize + 1)
+	, iovcnt_(0) {
+	iov_ = static_cast<struct iovec*>(std::malloc(sizeof(struct iovec) * iovsize_));
+	LinkedBuffer* linkedBuffer = new LinkedBuffer(kReceiveSize);
+	listBuffer_.pushBack(linkedBuffer);
+	buffer_ = linkedBuffer;
+}
+
+ReceiveBuffer::~ReceiveBuffer() {
+	if (iov_) {
+		std::free(iov_);
+	}
+}
+//FIXME :
+void ReceiveBuffer::prepareReceive() {
+	iovcnt_ = 0;
+	uint32_t nwrote = 0;
+	LinkedBuffer* linkedBuffer = buffer_;
+	while (iovcnt_ < iovsize_ && nwrote < kMaxReceive) {
+		if (!linkedBuffer) {
+			linkedBuffer = new LinkedBuffer(kReceiveSize);
+			listBuffer_.pushBack(linkedBuffer);
+		}
+		uint32_t writableSize = linkedBuffer->writableSize();
+		if (writableSize > 0) {
+			iov_[iovcnt_].iov_base = linkedBuffer->dataWrite();
+			iov_[iovcnt_].iov_len = writableSize;
+			++iovcnt_;
+			nwrote += writableSize;
+		}
+		linkedBuffer = linkedBuffer->next();
+	}
+}
+
+void ReceiveBuffer::hasReceived(uint32_t count) {
+	uint32_t nwrote = 0;
+	while (buffer_ && nwrote < count) {
+		uint32_t writableSize = std::min(buffer_->writableSize(), count - nwrote);
+		if (writableSize > 0) {
+			buffer_->hasWritten(writableSize);
+			nwrote += writableSize;
+		}
+		if (buffer_->full()) {
+			buffer_ = buffer_->next();
+		}
+	}
+	size_ += nwrote;
 }

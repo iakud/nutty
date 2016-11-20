@@ -41,6 +41,11 @@ public:
 	inline uint32_t readableSize() { return writeIndex_ - readIndex_; }
 	inline uint32_t writableSize() { return capacity_ - writeIndex_; }
 
+	inline void hasWritten(uint32_t count) { writeIndex_ += count; }
+	inline void hasRead(uint32_t count) { readIndex_ += count; }
+	inline bool empty() { return readIndex_ == writeIndex_; }
+	inline bool full() { return writeIndex_ == capacity_; }
+
 	inline LinkedBuffer* next() { return next_; }
 private:
 	char* buffer_;
@@ -106,6 +111,7 @@ public:
 	void append(Buffer&& buffer, uint32_t offset);
 
 	void prepareSend();
+	void hasSent(uint32_t count);
 
 	uint32_t size() { return size_; }
 	const struct iovec* iov() { return iov_; }
@@ -128,9 +134,29 @@ private:
 
 class ReceiveBuffer : noncopyable {
 public:
+	ReceiveBuffer();
+	~ReceiveBuffer();
+
+	uint32_t size() { return size_; }
 
 private:
+	void prepareReceive();
+	void hasReceived(uint32_t count);
+
+	const struct iovec* iov() { return iov_; }
+	int iovcnt() { return iovcnt_; }
+
+private:
+	static const int kIovSizeInit = 2;
+	static const int kReceiveSize = 8 * 1024;
+	static const uint32_t kMaxReceive = 64 * 1024;
+
 	ListBuffer listBuffer_;
+	LinkedBuffer* buffer_;
+	uint32_t size_;
+	struct iovec* iov_;
+	int iovsize_;
+	int iovcnt_;
 }; // end class ReceiveBuffer
 
 } // end namespace catta
