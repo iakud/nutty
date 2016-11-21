@@ -107,8 +107,8 @@ public:
 	~SendBuffer();
 
 	void append(const void* buf, uint32_t count);
-	void append(Buffer&& buffer);
-	void append(Buffer&& buffer, uint32_t offset);
+	void append(Buffer&& buf);
+	void append(Buffer&& buf, uint32_t offset);
 
 	void prepareSend();
 	void hasSent(uint32_t count);
@@ -123,9 +123,9 @@ private:
 private:
 	static const int kIovSizeInit = 2;
 	static const int kIovSizeMax = 1024;
-	static const uint32_t kMaxSend = 64 * 1024;
+	static const uint32_t kMaxSend = 8 * 1024;
 
-	ListBuffer listBuffer_;
+	ListBuffer buffers_;
 	uint32_t size_;
 	struct iovec* iov_;
 	int iovsize_;
@@ -151,8 +151,8 @@ private:
 	static const int kReceiveSize = 8 * 1024;
 	static const uint32_t kMaxReceive = 64 * 1024;
 
-	ListBuffer listBuffer_;
-	LinkedBuffer* buffer_;
+	ListBuffer buffers_;
+	ListBuffer extendBuffers_;
 	uint32_t size_;
 	struct iovec* iov_;
 	int iovsize_;

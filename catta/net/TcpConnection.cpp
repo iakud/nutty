@@ -130,23 +130,23 @@ void TcpConnection::sendInLoop(const void* buf, uint32_t count) {
 	}
 }
 
-void TcpConnection::sendInLoop(BufferPtr& buffer) {
+void TcpConnection::sendInLoop(BufferPtr& buf) {
 	if (state_ == kDisconnected) {
 		// FIXME : log
 		return;
 	}
 	if (writable_) {
-		ssize_t nwrote = socket_->write(buffer->data(), buffer->size());
+		ssize_t nwrote = socket_->write(buf->data(), buf->size());
 		if (nwrote < 0) {
 			if (errno != EWOULDBLOCK) {
 				if (errno == EPIPE || errno == ECONNRESET) {
 					return;
 				}
 			}
-			sendBuffer_.append(std::move(*buffer));
+			sendBuffer_.append(std::move(*buf));
 			writable_ = false;
 		} else {
-			sendBuffer_.append(std::move(*buffer), static_cast<uint32_t>(nwrote));
+			sendBuffer_.append(std::move(*buf), static_cast<uint32_t>(nwrote));
 			writable_ = false;
 		}
 	}
