@@ -110,26 +110,19 @@ public:
 	void append(Buffer&& buf);
 	void append(Buffer&& buf, uint32_t offset);
 
-	void prepareSend();
-	void hasSent(uint32_t count);
-
 	uint32_t size() { return size_; }
-	const struct iovec* iov() { return iov_; }
-	int iovcnt() { return iovcnt_; }
 
 private:
-	void resize(int iovsize);
+	void fillSend(struct iovec* iov, int& iovcnt);
+	void onSend(uint32_t count);
 
 private:
-	static const int kIovSizeInit = 2;
-	static const int kIovSizeMax = 1024;
-	static const uint32_t kMaxSend = 8 * 1024;
+	static const uint32_t kSendSize = 8 * 1024;
 
 	ListBuffer buffers_;
 	uint32_t size_;
-	struct iovec* iov_;
-	int iovsize_;
-	int iovcnt_;
+
+	friend class TcpConnection;
 }; // end class SendBuffer
 
 class ReceiveBuffer : noncopyable {
@@ -140,23 +133,17 @@ public:
 	uint32_t size() { return size_; }
 
 private:
-	void prepareReceive();
-	void hasReceived(uint32_t count);
-
-	const struct iovec* iov() { return iov_; }
-	int iovcnt() { return iovcnt_; }
+	void fillReceive(struct iovec* iov, int& iovcnt);
+	void onReceive(uint32_t count);
 
 private:
-	static const int kIovSizeInit = 2;
-	static const int kReceiveSize = 8 * 1024;
-	static const uint32_t kMaxReceive = 64 * 1024;
+	static const uint32_t kReceiveSize = 8 * 1024;
 
 	ListBuffer buffers_;
 	ListBuffer extendBuffers_;
 	uint32_t size_;
-	struct iovec* iov_;
-	int iovsize_;
-	int iovcnt_;
+
+	friend class TcpConnection;
 }; // end class ReceiveBuffer
 
 } // end namespace catta
