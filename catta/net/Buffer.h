@@ -5,8 +5,6 @@
 
 #include <cstdint>
 
-#include <unistd.h>
-
 struct iovec;
 
 namespace catta {
@@ -47,6 +45,7 @@ public:
 	inline bool full() { return writeIndex_ == capacity_; }
 
 	inline LinkedBuffer* next() { return next_; }
+
 private:
 	char* buffer_;
 	uint32_t capacity_;
@@ -62,10 +61,8 @@ public:
 	ListBuffer() : head_(nullptr), tail_(nullptr), size_(0) {}
 	~ListBuffer();
 
-	inline void pushBack(LinkedBuffer* buffer) {
-		if (buffer == nullptr || buffer->next_) {
-			return;
-		}
+	inline void pushTail(LinkedBuffer* buffer) {
+		if (buffer == nullptr || buffer->next_) return;
 		if (tail_) {
 			tail_->next_ = buffer;
 			tail_ = buffer;
@@ -75,10 +72,8 @@ public:
 		++size_;
 	}
 
-	inline LinkedBuffer* popFront() {
-		if (head_ == nullptr) {
-			return nullptr;
-		}
+	inline void popHead() {
+		if (head_ == nullptr) return;
 		LinkedBuffer* buffer = head_;
 		if (head_->next_) {
 			head_ = head_->next_;
@@ -87,11 +82,10 @@ public:
 			head_ = tail_ = nullptr;
 		}
 		--size_;
-		return buffer;
 	}
 
-	inline LinkedBuffer* front() { return head_; }
-	inline LinkedBuffer* back() { return tail_; }
+	inline LinkedBuffer* head() { return head_; }
+	inline LinkedBuffer* tail() { return tail_; }
 	inline uint32_t size() { return size_; }
 	inline bool empty() { return size_ == 0; }
 
@@ -113,8 +107,9 @@ public:
 	uint32_t size() { return size_; }
 
 private:
-	void fillSend(struct iovec* iov, int& iovcnt);
-	void onSend(uint32_t count);
+	inline int buffersSize() { return buffers_.size(); }
+	void prepareSend(struct iovec* iov, int& iovcnt);
+	void hasSent(uint32_t count);
 
 private:
 	static const uint32_t kSendSize = 8 * 1024;
@@ -133,8 +128,8 @@ public:
 	uint32_t size() { return size_; }
 
 private:
-	void fillReceive(struct iovec* iov, int& iovcnt);
-	void onReceive(uint32_t count);
+	void prepareReceive(struct iovec* iov, int& iovcnt);
+	void hasReceived(uint32_t count);
 
 private:
 	static const uint32_t kReceiveSize = 8 * 1024;

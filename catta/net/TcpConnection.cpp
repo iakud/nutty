@@ -70,10 +70,10 @@ void TcpConnection::connectDestroyed() {
 void TcpConnection::handleRead() {
 	struct iovec iov[2];
 	int iovcnt;
-	receiveBuffer_.fillReceive(iov, iovcnt);
+	receiveBuffer_.prepareReceive(iov, iovcnt);
 	ssize_t nread = socket_->readv(iov, iovcnt);
 	if (nread > 0) {
-		receiveBuffer_.onReceive(static_cast<uint32_t>(nread));
+		receiveBuffer_.hasReceived(static_cast<uint32_t>(nread));
 	}
 }
 
@@ -81,12 +81,12 @@ void TcpConnection::handleWrite() {
 	if (writable_) {
 		return;
 	}
-	struct iovec iov[sendBuffer_.buffers_.size()];
+	struct iovec iov[sendBuffer_.buffersSize()];
 	int iovcnt;
-	sendBuffer_.fillSend(iov, iovcnt);
+	sendBuffer_.prepareSend(iov, iovcnt);
 	ssize_t nwrote = socket_->writev(iov, iovcnt);
 	if (nwrote > 0) {
-		sendBuffer_.onSend(static_cast<uint32_t>(nwrote));
+		sendBuffer_.hasSent(static_cast<uint32_t>(nwrote));
 		if (sendBuffer_.size() == 0) {
 
 		}
