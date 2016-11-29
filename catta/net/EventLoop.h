@@ -36,7 +36,6 @@ private:
 	void updateWatcher(Watcher* watcher);
 	void removeWatcher(Watcher* watcher);
 
-	void handleActiveWatchers();
 	void doPendingFunctors();
 
 	void wakeup();
@@ -50,7 +49,6 @@ private:
 	std::unique_ptr<Watcher> wakeupWatcher_;
 
 	std::vector<Watcher*> activeWatchers_;
-	std::vector<Watcher*> readyList_;
 
 	std::mutex mutex_;
 	std::vector<Functor> pendingFunctors_;

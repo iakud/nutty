@@ -12,9 +12,6 @@ namespace catta {
 class Watcher;
 
 class EPollPoller : noncopyable {
-protected:
-	static const int kEventSizeInit = 16;
-
 public:
 	EPollPoller();
 	virtual ~EPollPoller();
@@ -25,6 +22,8 @@ public:
 	void removeWatcher(Watcher* watcher);
 
 private:
+	static const int kEventSizeInit = 16;
+
 	void fillActiveWatchers(int numEvents, std::vector<Watcher*>& activeWatchers);
 
 	int epollfd_;

@@ -2,29 +2,23 @@
 
 #include <catta/net/EventLoop.h>
 
+#include <sys/epoll.h>
+
 using namespace catta;
+
+const int Watcher::kNoneEvent = 0;
+const int Watcher::kReadEvent = EPOLLIN | EPOLLPRI;
+const int Watcher::kWriteEvent = EPOLLOUT;
 
 Watcher::Watcher(EventLoop* loop, const int fd)
 	: loop_(loop)
 	, fd_(fd)
-	, events_(WatcherEvents::kEventNone)
-	, revents_(WatcherEvents::kEventNone)
-	, started_(false)
-	, activeIndex_(kInvalidActiveIndex) {
+	, events_(0)
+	, revents_(0)
+	, started_(false) {
 }
 
 Watcher::~Watcher() {
-}
-
-void Watcher::setEvents(WatcherEvents events) {
-	events_ = events | WatcherEvents::kEventError | WatcherEvents::kEventClose;
-	update();
-}
-
-void Watcher::activeEvents(WatcherEvents revents) {
-	if (started_) {
-		revents_ |= revents;
-	}
 }
 
 void Watcher::start() {
@@ -42,25 +36,30 @@ void Watcher::update() {
 
 void Watcher::stop() {
 	if (started_) {
-		revents_ = WatcherEvents::kEventNone;
 		loop_->removeWatcher(this);
 		started_ = false;
 	}
 }
 
 void Watcher::handleEvents() {
-	WatcherEvents revents = revents_ & events_;
-	revents_ = WatcherEvents::kEventNone;
-	if (revents & kEventClose && closeCallback_) {
-		closeCallback_();
+	if (revents_ & EPOLLHUP && !(revents_ & EPOLLIN)) {
+		if (closeCallback_) {
+			closeCallback_();
+		}
 	}
-	if (revents & kEventError && errorCallback_) {
-		errorCallback_();
+	if (revents_ & EPOLLERR) {
+		if (errorCallback_) {
+			errorCallback_();
+		}
 	}
-	if (revents & kEventRead && readCallback_) {
-		readCallback_();
+	if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
+		if (readCallback_) {
+			readCallback_();
+		}
 	}
-	if (revents & kEventWrite && writeCallback_) {
-		writeCallback_();
+	if (revents_ & EPOLLOUT) {
+		if (writeCallback_) {
+			writeCallback_();
+		}
 	}
 }

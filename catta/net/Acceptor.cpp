@@ -20,7 +20,7 @@ Acceptor::Acceptor(EventLoop* loop,const InetAddress& localAddr)
 	acceptSocket_.bind(localAddr.getSockAddr());
 
 	watcher_.setReadCallback(std::bind(&Acceptor::handleRead, this));
-	watcher_.setEvents(WatcherEvents::kEventRead);
+	watcher_.enableReading();
 }
 
 Acceptor::~Acceptor() {
@@ -45,8 +45,6 @@ void Acceptor::handleRead() {
 		} else {
 			Socket::close(connfd);
 		}
-
-		watcher_.activeEvents(WatcherEvents::kEventRead);
 	} else {
 		int err = errno; // on error
 		if (EAGAIN == err) {
@@ -56,8 +54,6 @@ void Acceptor::handleRead() {
 			idleFd_ = acceptSocket_.accept();
 			::close(idleFd_);
 			idleFd_ = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
-
-			watcher_.activeEvents(WatcherEvents::kEventRead);
 		} else {
 			// FIXME
 			// LOG_FATAL

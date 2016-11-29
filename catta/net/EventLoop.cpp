@@ -30,11 +30,10 @@ EventLoop::EventLoop()
 	, wakeupFd_(createEventFd())
 	, wakeupWatcher_(new Watcher(this, wakeupFd_))
 	, activeWatchers_()
-	, readyList_()
 	, mutex_()
 	, pendingFunctors_() {
 	wakeupWatcher_->setReadCallback(std::bind(&EventLoop::handleWakeup, this));
-	wakeupWatcher_->setEvents(WatcherEvents::kEventRead);
+	wakeupWatcher_->enableReading();
 	wakeupWatcher_->start();
 }
 
@@ -54,8 +53,11 @@ void EventLoop::loop() {
 	quit_ = false;
 	// blocking until quit
 	while(!quit_) {
+		activeWatchers_.clear();
 		poller_->poll(activeWatchers_, kPollTime); // poll network event
-		handleActiveWatchers();
+		for (Watcher*& watcher : activeWatchers_) {
+			watcher->handleEvents();
+		}
 		doPendingFunctors();
 	}
 }
@@ -87,32 +89,7 @@ void EventLoop::updateWatcher(Watcher* watcher) {
 }
 
 void EventLoop::removeWatcher(Watcher* watcher) {
-	if (watcher->activeIndex() != Watcher::kInvalidActiveIndex) {
-		activeWatchers_[watcher->activeIndex()] = nullptr;
-		watcher->setActiveIndex(Watcher::kInvalidActiveIndex);
-	}
 	poller_->removeWatcher(watcher);
-}
-
-void EventLoop::handleActiveWatchers() {
-	int activeIndex = 0;
-	for (Watcher*& watcher : activeWatchers_) {
-		if (watcher) {
-			watcher->handleEvents();
-			if (watcher->revents() != WatcherEvents::kEventNone) {
-				activeWatchers_[activeIndex] = watcher;
-				watcher->setActiveIndex(activeIndex++);
-			} else {
-				watcher->setActiveIndex(Watcher::kInvalidActiveIndex);
-			}
-		}
-	}
-	if (activeIndex > 0) {
-		activeWatchers_.resize(activeIndex);
-		wakeup();
-	} else {
-		activeWatchers_.clear();
-	}
 }
 
 void EventLoop::doPendingFunctors() {

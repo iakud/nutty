@@ -53,7 +53,7 @@ void TcpConnection::forceClose() {
 void TcpConnection::connectEstablished() {
 	if (state_ == kConnecting) {
 		setState(kConnected);
-		watcher_->setEvents(WatcherEvents::kEventRead);
+		watcher_->enableReading();
 		watcher_->start();
 		connectCallback_(shared_from_this());
 	}
@@ -155,7 +155,7 @@ void TcpConnection::sendInLoop(BufferPtr& buf) {
 }
 
 void TcpConnection::shutdownInLoop() {
-	if (watcher_->events() | WatcherEvents::kEventWrite) {
+	if (!watcher_->isWriting()) {
 		socket_->shutdownWrite();
 	}
 }

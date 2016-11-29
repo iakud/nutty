@@ -31,42 +31,17 @@ void EPollPoller::poll(std::vector<Watcher*>& activeWatchers, int timeout) {
 }
 
 void EPollPoller::fillActiveWatchers(int numEvents, std::vector<Watcher*>& activeWatchers) {
-	int activeIndex = static_cast<int>(activeWatchers.size());
 	for (int i = 0; i < numEvents; ++i) {
 		struct epoll_event& event = events_[i];
 		Watcher* watcher = static_cast<Watcher*>(event.data.ptr);
-		WatcherEvents revents = WatcherEvents::kEventNone;
-		// contain triggered events
-		if (event.events & (EPOLLRDHUP|EPOLLHUP)) {
-			revents |= WatcherEvents::kEventClose;
-		}
-		if (event.events & (EPOLLERR)) {
-			revents |= WatcherEvents::kEventError;
-		}
-		if (event.events & (EPOLLIN)) {
-			revents |= WatcherEvents::kEventRead;
-		}
-		if (event.events & (EPOLLOUT)) {
-			revents |= WatcherEvents::kEventWrite;
-		}
-		watcher->containEvents(revents);
-		if (watcher->activeIndex() == Watcher::kInvalidActiveIndex) {
-			activeWatchers.push_back(watcher);
-			watcher->setActiveIndex(activeIndex++);
-		}
+		watcher->containEvents(event.events); // contain triggered events
+		activeWatchers.push_back(watcher);
 	}
 }
 
 void EPollPoller::addWatcher(Watcher* watcher) {
 	struct epoll_event event;
-	event.events = (EPOLLERR|EPOLLRDHUP|EPOLLET);	// edge trigger
-	WatcherEvents events = watcher->events();
-	if (events & WatcherEvents::kEventRead) {
-		event.events |= EPOLLIN;
-	}
-	if (events & WatcherEvents::kEventWrite) {
-		event.events |= EPOLLOUT;
-	}
+	event.events = watcher->events();
 	event.data.ptr = watcher;
 	if (::epoll_ctl(epollfd_, EPOLL_CTL_ADD, watcher->fd(), &event) < 0) {
 		// FIXME : on error
@@ -75,14 +50,7 @@ void EPollPoller::addWatcher(Watcher* watcher) {
 
 void EPollPoller::updateWatcher(Watcher* watcher) {
 	struct epoll_event event;
-	event.events = (EPOLLERR|EPOLLRDHUP|EPOLLET);	// edge trigger
-	WatcherEvents events = watcher->events();
-	if (events & WatcherEvents::kEventRead) {
-		event.events |= EPOLLIN;
-	}
-	if (events & WatcherEvents::kEventWrite) {
-		event.events |= EPOLLOUT;
-	}
+	event.events = watcher->events();
 	event.data.ptr = watcher;
 	if (::epoll_ctl(epollfd_, EPOLL_CTL_MOD, watcher->fd(), &event) < 0) {
 		// FIXME : on error
