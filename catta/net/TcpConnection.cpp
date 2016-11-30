@@ -6,6 +6,14 @@
 
 using namespace catta;
 
+void defaultConnectCallback(const TcpConnectionPtr& connection) {
+
+}
+
+void defaultReadCallback(const TcpConnectionPtr& connection, ReceiveBuffer& buffer) {
+	// buffer->retrieveAll();
+}
+
 TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
 	const InetAddress& localAddr, const InetAddress& peerAddr)
 	: loop_(loop)
@@ -16,10 +24,10 @@ TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
 	, peerAddr_(peerAddr)
 	, sendBuffer_()
 	, receiveBuffer_() {
-	watcher_->setReadCallback(std::bind(&TcpConnection::handleRead, this));
-	watcher_->setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
 	watcher_->setCloseCallback(std::bind(&TcpConnection::handleClose, this));
 	watcher_->setErrorCallback(std::bind(&TcpConnection::handleError, this));
+	watcher_->setReadCallback(std::bind(&TcpConnection::handleRead, this));
+	watcher_->setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
 
 	socket_->setKeepAlive(true);
 }

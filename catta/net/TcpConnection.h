@@ -1,8 +1,9 @@
 #ifndef CATTA_NET_TCPCONNECTION_H
 #define CATTA_NET_TCPCONNECTION_H
 
-#include <catta/net/InetAddress.h>
+#include <catta/net/Callbacks.h>
 #include <catta/net/Buffer.h>
+#include <catta/net/InetAddress.h>
 
 #include <catta/base/noncopyable.h>
 
@@ -16,17 +17,7 @@ class EventLoop;
 class Watcher;
 class Socket;
 
-class TcpConnection;
-typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
-
 class TcpConnection : noncopyable, public std::enable_shared_from_this<TcpConnection> {
-public:
-	// callback typedef
-	typedef std::function<void(TcpConnectionPtr)> ConnectCallback;
-	typedef std::function<void(TcpConnectionPtr, uint32_t)> ReadCallback;
-	typedef std::function<void(TcpConnectionPtr, uint32_t)> WriteCallback;
-	typedef std::function<void(TcpConnectionPtr)> DisconnectCallback;
-
 public:
 	EventLoop* getLoop() const { return loop_; }
 	const InetAddress& localAddress() const { return localAddr_; }
