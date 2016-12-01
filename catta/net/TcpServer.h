@@ -6,7 +6,7 @@
 
 #include <memory>
 #include <functional>
-#include <map>
+#include <unordered_map>
 #include <atomic>
 
 namespace catta {
@@ -39,7 +39,7 @@ private:
 	InetAddress localAddr_;
 	std::unique_ptr<Acceptor> acceptor_;
 	std::atomic_bool listen_;
-	std::map<int, TcpConnectionPtr> connections_;
+	std::unordered_map<int, TcpConnectionPtr> connections_;
 
 	//EventLoopThreadPool* loopThreadPool_;
 	uint32_t indexLoop_;
