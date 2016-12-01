@@ -10,6 +10,7 @@ set(CATTANET_SRCS
 	Acceptor.cpp
 	Buffer.cpp
 	TcpConnection.cpp
+	TcpServer.cpp
 	)
 
 add_library(cattanet ${CATTANET_SRCS})

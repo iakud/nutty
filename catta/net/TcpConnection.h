@@ -19,28 +19,33 @@ class Socket;
 
 class TcpConnection : noncopyable, public std::enable_shared_from_this<TcpConnection> {
 public:
+	explicit TcpConnection(EventLoop* loop, int sockfd,
+		const InetAddress& localAddr, const InetAddress& peerAddr);
+	~TcpConnection();
+	
 	EventLoop* getLoop() const { return loop_; }
 	const InetAddress& localAddress() const { return localAddr_; }
 	const InetAddress& peerAddress() const { return peerAddr_; }
 
+	void setConnectCallback(const ConnectCallback& cb) { connectCallback_ = cb; }
+	void setDisconnectCallback(const DisconnectCallback& cb) { disconnectCallback_ = cb; }
+	void setReadCallback(const ReadCallback& cb) { readCallback_ = cb; }
+	void setWriteCallback(const WriteCallback& cb) { writeCallback_ = cb; }
+
 	void send(const void* buf, uint32_t count);
 	void shutdown();
 	void forceClose();
-	
-	void connectEstablished();
-	void connectDestroyed();
 
 private:
-	// for tcpserver and tcpclient
-	typedef std::function<void(TcpConnectionPtr)> CloseCallback;
-
-private:
-	explicit TcpConnection(EventLoop* loop, int sockfd,
-		const InetAddress& localAddr, const InetAddress& peerAddr);
-	~TcpConnection();
-
 	typedef std::shared_ptr<Buffer> BufferPtr;
 	enum State { kDisconnected, kConnecting, kConnected, kDisconnecting };
+
+	// for tcpserver and tcpclient
+	typedef std::function<void(TcpConnectionPtr)> CloseCallback;
+	void setCloseCallback(CloseCallback&& cb) { closeCallback_ = cb; }
+
+	void connectEstablished();
+	void connectDestroyed();
 
 	void handleRead();
 	void handleWrite();
@@ -51,6 +56,8 @@ private:
 	void sendInLoop(BufferPtr& buffer);
 	void shutdownInLoop();
 	void forceCloseInLoop();
+	void connectEstablishedInLoop();
+	void connectDestroyedInLoop();
 
 	void setState(State state) { state_ = state; }
 
@@ -67,9 +74,9 @@ private:
 	ReceiveBuffer receiveBuffer_;
 
 	ConnectCallback connectCallback_;
+	DisconnectCallback disconnectCallback_;
 	ReadCallback readCallback_;
 	WriteCallback writeCallback_;
-	DisconnectCallback disconnectCallback_;
 	CloseCallback closeCallback_;
 
 	// friend class only TcpServer & TcpClient
