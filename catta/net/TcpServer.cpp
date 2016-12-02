@@ -20,7 +20,7 @@ TcpServer::~TcpServer() {
 	// destroy connections
 	for (auto& pairConnnection : connections_) {
 		TcpConnectionPtr& connection = pairConnnection.second;
-		connection->connectDestroyed();
+		connection->destroyed();
 		connection.reset();
 	}
 	/*
@@ -59,7 +59,7 @@ void TcpServer::handleAccept(const int sockfd, const InetAddress& peerAddr) {
 	connection->setWriteCallback(writeCallback_);
 	connection->setCloseCallback(std::bind(&TcpServer::removeConnection,
 		this, sockfd, std::placeholders::_1));
-	connection->connectEstablished();
+	connection->established();
 }
 
 void TcpServer::removeConnection(const int sockfd, TcpConnectionPtr connection) {
@@ -69,5 +69,5 @@ void TcpServer::removeConnection(const int sockfd, TcpConnectionPtr connection) 
 
 void TcpServer::removeConnectionInLoop(const int sockfd, TcpConnectionPtr connection) {
 	connections_.erase(sockfd);
-	connection->connectDestroyed();
+	connection->destroyed();
 }

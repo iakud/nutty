@@ -44,8 +44,8 @@ private:
 	typedef std::function<void(TcpConnectionPtr)> CloseCallback;
 	void setCloseCallback(CloseCallback&& cb) { closeCallback_ = cb; }
 
-	void connectEstablished();
-	void connectDestroyed();
+	void established();
+	void destroyed();
 
 	void handleRead();
 	void handleWrite();
@@ -56,8 +56,8 @@ private:
 	void sendInLoop(BufferPtr& buffer);
 	void shutdownInLoop();
 	void forceCloseInLoop();
-	void connectEstablishedInLoop();
-	void connectDestroyedInLoop();
+	void establishedInLoop();
+	void destroyedInLoop();
 
 	void setState(State state) { state_ = state; }
 

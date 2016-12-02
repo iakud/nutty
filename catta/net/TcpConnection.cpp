@@ -58,12 +58,12 @@ void TcpConnection::forceClose() {
 	loop_->queueInLoop(std::bind(&TcpConnection::forceCloseInLoop, shared_from_this()));
 }
 
-void TcpConnection::connectEstablished() {
-	loop_->runInLoop(std::bind(&TcpConnection::connectEstablishedInLoop, shared_from_this()));
+void TcpConnection::established() {
+	loop_->runInLoop(std::bind(&TcpConnection::establishedInLoop, shared_from_this()));
 }
 
-void TcpConnection::connectDestroyed() {
-	loop_->queueInLoop(std::bind(&TcpConnection::connectDestroyedInLoop, shared_from_this()));
+void TcpConnection::destroyed() {
+	loop_->queueInLoop(std::bind(&TcpConnection::destroyedInLoop, shared_from_this()));
 }
 
 void TcpConnection::handleRead() {
@@ -165,7 +165,7 @@ void TcpConnection::forceCloseInLoop() {
 	}
 }
 
-void TcpConnection::connectEstablishedInLoop() {
+void TcpConnection::establishedInLoop() {
 	if (state_ == kConnecting) {
 		setState(kConnected);
 		watcher_->enableReading();
@@ -174,7 +174,7 @@ void TcpConnection::connectEstablishedInLoop() {
 	}
 }
 
-void TcpConnection::connectDestroyedInLoop() {
+void TcpConnection::destroyedInLoop() {
 	if (state_ == kConnected) {
 		setState(kDisconnected);
 		watcher_->stop();
