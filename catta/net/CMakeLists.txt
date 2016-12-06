@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 2.6)
 set(CATTANET_SRCS
 	Watcher.cpp
 	EventLoop.cpp
+	EventLoopThread.cpp
+	EventLoopThreadPool.cpp
 	EPollPoller.cpp
 	InetAddress.cpp
 	Socket.cpp
