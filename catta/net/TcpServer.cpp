@@ -3,15 +3,16 @@
 #include <catta/net/Acceptor.h>
 #include <catta/net/EventLoop.h>
 
+#include <catta/net/EventLoopThreadPool.h>
+
 using namespace catta;
 
 TcpServer::TcpServer(EventLoop* loop, const InetAddress& localAddr)
 	: loop_(loop)
 	, localAddr_(localAddr)
 	, acceptor_(std::make_unique<Acceptor>(loop, localAddr))
-	, listen_(false)
-//	, loopThreadPool_(NULL)
-	, indexLoop_(0) {
+	, threadPool_(std::make_unique<EventLoopThreadPool>(loop))
+	, listen_(false) {
 	acceptor_->setAcceptCallback(std::bind(&TcpServer::handleAccept, 
 		this, std::placeholders::_1, std::placeholders::_2));
 }
@@ -23,34 +24,22 @@ TcpServer::~TcpServer() {
 		connection->destroyed();
 		connection.reset();
 	}
-	/*
-	if (loopThreadPool_) {
-		loopThreadPool_ = NULL;
-	}*/
+}
+
+void TcpServer::setThreadNum(int numThreads) {
+	threadPool_->setThreadNum(numThreads);
 }
 
 void TcpServer::listen() {
-	if (listen_) {
-		return;
+	if (!listen_.exchange(true)) {
+		threadPool_->start();
+		listen_ = true;
+		loop_->runInLoop(std::bind(&Acceptor::listen, acceptor_.get()));
 	}
-
-	listen_ = true;
-	acceptor_->listen();
 }
 
 void TcpServer::handleAccept(const int sockfd, const InetAddress& peerAddr) {
-	/*
-	EventLoop* loop;
-	if (loopThreadPool_) {
-		++indexLoop_;
-		indexLoop_ %= loopThreadPool_->getCount();
-		loop = loopThreadPool_->getLoop(indexLoop_);
-	} else {
-		loop = loop_;
-	}
-	*/
-	EventLoop* loop = loop_; // FIXME
-
+	EventLoop* loop = threadPool_->getLoop();
 	TcpConnectionPtr connection = std::make_shared<TcpConnection>(loop, sockfd, localAddr_, peerAddr);
 	connections_[sockfd] = connection;
 	connection->setConnectCallback(connectCallback_);

@@ -4,22 +4,32 @@
 
 using namespace catta;
 
-EventLoopThreadPool::EventLoopThreadPool(int numThreads)
-	: numThreads_(numThreads)
+EventLoopThreadPool::EventLoopThreadPool(EventLoop* baseLoop)
+	: baseLoop_(baseLoop)
+	, started_(false)
+	, numThreads_(0)
 	, next_(0) {
-	for (int i = 0; i < numThreads; ++i) {
+	
+}
+
+EventLoopThreadPool::~EventLoopThreadPool() {
+}
+
+void EventLoopThreadPool::start() {
+	if (started_) {
+		return;
+	}
+	started_ = true;
+	for (int i = 0; i < numThreads_; ++i) {
 		EventLoopThread* thread = new EventLoopThread();
 		threads_.push_back(std::unique_ptr<EventLoopThread>(thread));
 		loops_.push_back(thread->getLoop());
 	}
 }
 
-EventLoopThreadPool::~EventLoopThreadPool() {
-}
-
 EventLoop* EventLoopThreadPool::getLoop() {
 	if (loops_.empty()) {
-		return nullptr;
+		return baseLoop_;
 	}
 
 	EventLoop* loop = loops_[next_];

@@ -13,12 +13,17 @@ class EventLoopThread;
 
 class EventLoopThreadPool {
 public:
-	EventLoopThreadPool(int numThreads);
+	EventLoopThreadPool(EventLoop* baseLoop = nullptr);
 	~EventLoopThreadPool();
+
+	void setThreadNum(int numThreads) { numThreads_ = numThreads; }
+	void start();
 
 	EventLoop* getLoop();
 
 private:
+	EventLoop* baseLoop_;
+	bool started_;
 	int numThreads_;
 	int next_;
 	std::vector<std::unique_ptr<EventLoopThread>> threads_;

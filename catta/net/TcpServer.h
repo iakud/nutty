@@ -13,16 +13,15 @@ namespace catta {
 
 class EventLoop;
 class Acceptor;
+class EventLoopThreadPool;
 
 class TcpServer : noncopyable {
 public:
 	explicit TcpServer(EventLoop* loop, const InetAddress& localAddr);
 	~TcpServer();
-/*
-	void setEventLoopThreadPool(EventLoopThreadPool* loopThreadPool) {
-		loopThreadPool_ = loopThreadPool;
-	}
-*/
+
+	void setThreadNum(int numThreads);
+
 	void setConnectCallback(const ConnectCallback& cb) { connectCallback_ = cb; }
 	void setDisconnectCallback(const DisconnectCallback& cb) { disconnectCallback_ = cb; }
 	void setReadCallback(const ReadCallback& cb) { readCallback_ = cb; }
@@ -38,11 +37,9 @@ private:
 	EventLoop* loop_;
 	InetAddress localAddr_;
 	std::unique_ptr<Acceptor> acceptor_;
+	std::unique_ptr<EventLoopThreadPool> threadPool_;
 	std::atomic_bool listen_;
 	std::unordered_map<int, TcpConnectionPtr> connections_;
-
-	//EventLoopThreadPool* loopThreadPool_;
-	uint32_t indexLoop_;
 
 	ConnectCallback connectCallback_;
 	DisconnectCallback disconnectCallback_;

@@ -12,7 +12,7 @@ public:
 		: latch_(numThreads)
 		, threads_() {
 		for (int i = 0; i < numThreads; ++i) {
-			threads_.emplace_back(std::bind(&Test::threadFunc, this));
+			threads_.emplace_back(&Test::threadFunc, this);
 		}
 	}
 

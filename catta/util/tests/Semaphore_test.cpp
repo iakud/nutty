@@ -11,7 +11,7 @@ public:
 	Test()
 		: sem_()
 		, thread_() {
-		thread_ = std::thread(std::bind(&Test::threadFunc, this));
+		thread_ = std::thread(&Test::threadFunc, this);
 	}
 
 	~Test() {

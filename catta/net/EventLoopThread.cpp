@@ -6,7 +6,7 @@ using namespace catta;
 
 EventLoopThread::EventLoopThread()
 	: loop_(nullptr)
-	, thread_(std::bind(&EventLoopThread::threadFunc, this)) {
+	, thread_(&EventLoopThread::threadFunc, this) {
 	std::unique_lock<std::mutex> lock(mutex_);
 	while (!loop_) {
 		cv_.wait(lock);
