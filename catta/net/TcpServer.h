@@ -38,7 +38,7 @@ private:
 	InetAddress localAddr_;
 	std::unique_ptr<Acceptor> acceptor_;
 	std::unique_ptr<EventLoopThreadPool> threadPool_;
-	std::atomic_bool listen_;
+	std::atomic_flag listen_;
 	std::unordered_map<int, TcpConnectionPtr> connections_;
 
 	ConnectCallback connectCallback_;

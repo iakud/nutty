@@ -12,7 +12,7 @@ TcpServer::TcpServer(EventLoop* loop, const InetAddress& localAddr)
 	, localAddr_(localAddr)
 	, acceptor_(std::make_unique<Acceptor>(loop, localAddr))
 	, threadPool_(std::make_unique<EventLoopThreadPool>(loop))
-	, listen_(false) {
+	, listen_(ATOMIC_FLAG_INIT) {
 	acceptor_->setAcceptCallback(std::bind(&TcpServer::handleAccept, 
 		this, std::placeholders::_1, std::placeholders::_2));
 }
@@ -31,9 +31,8 @@ void TcpServer::setThreadNum(int numThreads) {
 }
 
 void TcpServer::listen() {
-	if (!listen_.exchange(true)) {
+	if (!listen_.test_and_set()) {
 		threadPool_->start();
-		listen_ = true;
 		loop_->runInLoop(std::bind(&Acceptor::listen, acceptor_.get()));
 	}
 }
@@ -53,7 +52,7 @@ void TcpServer::handleAccept(const int sockfd, const InetAddress& peerAddr) {
 
 void TcpServer::removeConnection(const int sockfd, TcpConnectionPtr connection) {
 	loop_->runInLoop(std::bind(&TcpServer::removeConnectionInLoop,
-			this, sockfd, connection));
+		this, sockfd, connection));
 }
 
 void TcpServer::removeConnectionInLoop(const int sockfd, TcpConnectionPtr connection) {
