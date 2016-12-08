@@ -15,14 +15,13 @@ class InetAddress;
 
 class Acceptor : noncopyable {
 public:
-	typedef std::function<void(int sockfd, const InetAddress& peerAddr)> AcceptCallback;
+	typedef std::function<void(int sockfd, const InetAddress& peerAddr)> ConnectionCallback;
 
-public:
 	explicit Acceptor(EventLoop* loop, const InetAddress& localAddr);
 	~Acceptor();
 
-	void setAcceptCallback(AcceptCallback&& acceptCallback) {
-		acceptCallback_ = acceptCallback;
+	void setConnectionCallback(ConnectionCallback&& connectionCallback) {
+		connectionCallback_ = connectionCallback;
 	}
 
 	bool isListenning() const { return listenning_; }
@@ -37,7 +36,7 @@ private:
 	bool listenning_;	// is listenning
 	int idleFd_;
 
-	AcceptCallback acceptCallback_;
+	ConnectionCallback connectionCallback_;
 }; // end class Acceptor
 
 } // end namespace catta

@@ -13,6 +13,7 @@ namespace catta {
 
 class EventLoop;
 class Acceptor;
+class Socket;
 class EventLoopThreadPool;
 
 class TcpServer : noncopyable {
@@ -30,7 +31,7 @@ public:
 	void listen();
 
 private:
-	void handleAccept(const int sockfd, const InetAddress& peerAddr);
+	void handleConnection(int sockfd, const InetAddress& peerAddr);
 	void removeConnection(const int sockfd, TcpConnectionPtr connection);
 	void removeConnectionInLoop(const int sockfd, TcpConnectionPtr connection);
 

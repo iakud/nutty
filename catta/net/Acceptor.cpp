@@ -2,7 +2,6 @@
 
 #include <catta/net/InetAddress.h>
 #include <catta/net/EventLoop.h>
-#include <catta/net/Watcher.h>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -37,13 +36,13 @@ void Acceptor::listen() {
 void Acceptor::handleRead() {
 	InetAddress peerAddr;
 	struct sockaddr_in peerSockAddr;
-	int connfd = acceptSocket_.accept(peerSockAddr);
-	if (connfd >= 0) { // accept successful
+	int sockfd = acceptSocket_.accept(peerSockAddr);
+	if (sockfd >= 0) { // accept successful
 		peerAddr.setSockAddr(peerSockAddr);
-		if (acceptCallback_) {
-			acceptCallback_(connfd, peerAddr);
+		if (connectionCallback_) {
+			connectionCallback_(sockfd, peerAddr);
 		} else {
-			Socket::close(connfd);
+			Socket::close(sockfd); //Socket::close(sockfd);
 		}
 	} else {
 		int err = errno; // on error

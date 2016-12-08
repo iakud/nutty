@@ -28,10 +28,6 @@ Socket::Socket(int sockfd)
 }
 
 Socket::~Socket() {
-	if (::close(sockfd_) < 0) {
-		// FIXME : log
-		// LOG_ERR
-	}
 }
 
 int Socket::bind(const struct sockaddr_in& addr) {

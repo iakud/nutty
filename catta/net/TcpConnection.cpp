@@ -33,7 +33,7 @@ TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
 }
 
 TcpConnection::~TcpConnection() {
-	
+	Socket::close(socket_->fd());
 }
 
 void TcpConnection::send(const void* buf, uint32_t count) {

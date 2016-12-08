@@ -13,7 +13,7 @@ TcpServer::TcpServer(EventLoop* loop, const InetAddress& localAddr)
 	, acceptor_(std::make_unique<Acceptor>(loop, localAddr))
 	, threadPool_(std::make_unique<EventLoopThreadPool>(loop))
 	, listen_(ATOMIC_FLAG_INIT) {
-	acceptor_->setAcceptCallback(std::bind(&TcpServer::handleAccept, 
+	acceptor_->setConnectionCallback(std::bind(&TcpServer::handleConnection, 
 		this, std::placeholders::_1, std::placeholders::_2));
 }
 
@@ -37,7 +37,7 @@ void TcpServer::listen() {
 	}
 }
 
-void TcpServer::handleAccept(const int sockfd, const InetAddress& peerAddr) {
+void TcpServer::handleConnection(int sockfd, const InetAddress& peerAddr) {
 	EventLoop* loop = threadPool_->getLoop();
 	TcpConnectionPtr connection = std::make_shared<TcpConnection>(loop, sockfd, localAddr_, peerAddr);
 	connections_[sockfd] = connection;
