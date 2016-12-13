@@ -28,9 +28,11 @@ Acceptor::~Acceptor() {
 }
 
 void Acceptor::listen() {
-	listenning_ = true;
-	acceptSocket_.listen();
-	watcher_.start();
+	if (!listenning_) {
+		listenning_ = true;
+		acceptSocket_.listen();
+		watcher_.start();
+	}
 }
 
 void Acceptor::handleRead() {

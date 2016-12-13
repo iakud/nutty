@@ -7,107 +7,135 @@
 using namespace catta;
 
 Connector::Connector(EventLoop* loop, const InetAddress& peerAddr)
-	: loop_(loop) {
-
+	: loop_(loop)
+	, peerAddr_(peerAddr)
+	, connect_(false)
+	, connecting_(false)
+	, retry_(false) {
 }
 
+void Connector::start() {
+	loop_->runInLoop(std::bind(&Connector::startInLoop, shared_from_this()));
+}
+
+void Connector::restart() {
+	if (connect_) {
+		if (!connecting_ && !retry_) {
+			connect();
+		}
+	}
+}
+
+void Connector::stop() {
+	loop_->runInLoop(std::bind(&Connector::stopInLoop, shared_from_this()));
+}
 
 void Connector::connect() {
-	loop_->runInLoop(std::bind(&Connector::connectInLoop, this)); // FIXME: unsafe
-}
-
-void Connector::reconnect() {
-
-}
-
-void Connector::disconnect() {
-	loop_->runInLoop(std::bind(&Connector::disconnectInLoop, this)); // FIXME: unsafe
-}
-
-void Connector::retry() {
-	if (connect_) {
-		// loop_->runInLoop(std::bind(&Connector::connectInLoop, shared_from_this()));
+	int sockfd = Socket::create();
+	connectSocket_.reset(new Socket(sockfd));
+	int ret = connectSocket_->connect(peerAddr_.getSockAddr());
+	if (ret == 0) {
+		connecting();
+		return;
 	}
+
+	int err = errno;
+	if (ret == 0 || err == EINPROGRESS || err == EINTR || err == EISCONN) {
+		connecting();
+	} else if (err == EAGAIN || err == EADDRINUSE || err == EADDRNOTAVAIL || err == ECONNREFUSED || err == ENETUNREACH) {
+		retry();
+	} else {
+		Socket::close(sockfd);
+		connectSocket_.reset();
+	}
+}
+
+void Connector::connecting() {
+	connecting_ = true;
+	watcher_.reset(new Watcher(loop_, connectSocket_->fd()));
+	watcher_->setWriteCallback(std::bind(&Connector::handleWrite, this));
+	watcher_->setWriteCallback(std::bind(&Connector::handleError, this));
+	watcher_->enableWriting();
+	watcher_->start();
+}
+
+void Connector::removeAndResetWatcher() {
+	watcher_->stop();
+	watcher_->disableAll();
+	loop_->queueInLoop(std::bind(&Connector::resetWatcher, shared_from_this()));
+	connecting_ = false;
 }
 
 void Connector::resetWatcher() {
 	watcher_.reset();
 }
 
-void Connector::handleWrite() {
-	if (connecting_) {
-		watcher_->stop();
-		watcher_->disableAll();
-		loop_->runInLoop(std::bind(&Connector::resetWatcher, this));
+void Connector::retry() {
+	Socket::close(connectSocket_->fd());
+	connectSocket_.reset();
+	if (connect_) {
+		retry_ = true;
+		loop_->runInLoop(std::bind(&Connector::retrying, shared_from_this()));
+	}
+}
 
-		int err = connectSocket_->getError();
-		if (err) {
-			Socket::close(connectSocket_->fd());
-
-			retry();
-		}
+void Connector::retrying() {
+	retry_ = false;
+	if (connect_) {
+		connect();
 	}
 }
 
 void Connector::handleError() {
 	if (connecting_) {
-		watcher_->stop();
-		watcher_->disableAll();
-		loop_->runInLoop(std::bind(&Connector::resetWatcher, this));
-
+		removeAndResetWatcher();
 		int err = connectSocket_->getError();
-		(void)err;
-		// FIXME : err
-		Socket::close(connectSocket_->fd());
-		connectSocket_.reset();
-		connecting_ = false;
+		(void)err; // FIXME : err
+		
 		retry();
 	}
 }
 
-void Connector::connectInLoop() {
-	if (connect_) {
-		return;
-	}
-	connect_ = true;
-	int sockfd = Socket::create();
-	connectSocket_.reset(new Socket(sockfd));
-	Socket socket(sockfd);
-	int ret = socket.connect(peerAddr_.getSockAddr());
-	if (ret == 0) {
-		InetAddress localAddr;
-		struct sockaddr_in localSockAddr;
-		socket.getSockName(&localSockAddr);
-		localAddr.setSockAddr(localSockAddr);
-		if (connectionCallback_) {
-			connectionCallback_(sockfd, localAddr);
-		} else {
-			Socket::close(sockfd);
-		}
-		return;
-	}
-
-	int err = errno;
-	if (err == EINPROGRESS || err == EINTR || err == EISCONN) {
-		watcher_.reset(new Watcher(loop_, sockfd));
-		watcher_->setWriteCallback(std::bind(&Connector::handleWrite, this));
-		watcher_->enableWriting();
-		watcher_->start();
-		connecting_ = true;
-	} else {
-		Socket::close(sockfd); // close first
-		// retry
-		if (err == EAGAIN || err == EADDRINUSE || err == EADDRNOTAVAIL || err == ECONNREFUSED || err == ENETUNREACH) {
+void Connector::handleWrite() {
+	if (connecting_) {
+		removeAndResetWatcher();
+		int err = connectSocket_->getError();
+		if (err) {
 			retry();
-			//loop_->runInLoop(std::bind(&Connector::connectInLoop, shared_from_this()));
+		} else {
+			struct sockaddr_in localSockAddr;
+			connectSocket_->getSockName(&localSockAddr);
+			const struct sockaddr_in& peerSockAddr = peerAddr_.getSockAddr();
+			if (localSockAddr.sin_port == peerSockAddr.sin_port && localSockAddr.sin_addr.s_addr == peerSockAddr.sin_addr.s_addr) {
+				retry();
+			} else {
+				int sockfd = connectSocket_->fd();
+				connectSocket_.reset();
+				if (connectionCallback_) {
+					connectionCallback_(sockfd, InetAddress(localSockAddr));
+				} else {
+					Socket::close(sockfd);
+				}
+			}
 		}
 	}
 }
 
-void Connector::disconnectInLoop() {
+void Connector::startInLoop() {
 	if (!connect_) {
-		return;
+		connect_ = true;
+		if (!retry_) {
+			connect();
+		}
 	}
-	connect_ = false;
+}
 
+void Connector::stopInLoop() {
+	if (connect_) {
+		connect_ = false;
+		if (connecting_) {
+			removeAndResetWatcher();
+			retry();
+		}
+	}
 }

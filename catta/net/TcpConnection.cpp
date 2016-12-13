@@ -66,6 +66,21 @@ void TcpConnection::destroyed() {
 	loop_->queueInLoop(std::bind(&TcpConnection::destroyedInLoop, shared_from_this()));
 }
 
+void TcpConnection::handleClose() {
+	setState(kDisconnected);
+	watcher_->stop();
+	TcpConnectionPtr guardThis(shared_from_this());
+	disconnectCallback_(guardThis);
+	closeCallback_(guardThis);
+}
+
+void TcpConnection::handleError() {
+	int err = socket_->getError();
+	(void)err;
+	// FIXME :
+	// LOG_ERROR
+}
+
 void TcpConnection::handleRead() {
 	struct iovec iov[2];
 	int iovcnt;
@@ -92,21 +107,6 @@ void TcpConnection::handleWrite() {
 	} else {
 		// FIXME : log
 	}
-}
-
-void TcpConnection::handleClose() {
-	setState(kDisconnected);
-	watcher_->stop();
-	TcpConnectionPtr guardThis(shared_from_this());
-	disconnectCallback_(guardThis);
-	closeCallback_(guardThis);
-}
-
-void TcpConnection::handleError() {
-	int err = socket_->getError();
-	(void)err;
-	// FIXME :
-	// LOG_ERROR
 }
 
 void TcpConnection::sendInLoop(const void* buf, uint32_t count) {

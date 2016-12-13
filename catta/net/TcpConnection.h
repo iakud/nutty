@@ -47,10 +47,10 @@ private:
 	void established();
 	void destroyed();
 
-	void handleRead();
-	void handleWrite();
 	void handleClose();
 	void handleError();
+	void handleRead();
+	void handleWrite();
 
 	void sendInLoop(const void* buf, uint32_t count);
 	void sendInLoop(BufferPtr& buffer);

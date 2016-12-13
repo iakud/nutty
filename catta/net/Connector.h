@@ -2,6 +2,7 @@
 #define CATTA_NET_CONNECTOR_H
 
 #include <catta/net/InetAddress.h>
+#include <catta/base/noncopyable.h>
 
 #include <memory>
 #include <functional>
@@ -12,7 +13,7 @@ class EventLoop;
 class Watcher;
 class Socket;
 
-class Connector {
+class Connector : noncopyable, public std::enable_shared_from_this<Connector> {
 public:
 	typedef std::function<void(int sockfd, const InetAddress& localAddr)> ConnectionCallback;
 
@@ -23,19 +24,23 @@ public:
 		connectionCallback_ = connectionCallback;
 	}
 
-	void connect();
-	void reconnect();
-	void disconnect();
+	void start();
+	void restart(); // call in loop
+	void stop();
 
 private:
-	void retry();
+	void connect();
+	void connecting();
+	void removeAndResetWatcher();
 	void resetWatcher();
+	void retry();
+	void retrying();
 	
-	void handleWrite();
 	void handleError();
+	void handleWrite();
 
-	void connectInLoop();
-	void disconnectInLoop();
+	void startInLoop();
+	void stopInLoop();
 
 	EventLoop* loop_;
 	InetAddress peerAddr_;
@@ -43,6 +48,7 @@ private:
 	std::unique_ptr<Watcher> watcher_;
 	bool connect_;
 	bool connecting_;
+	bool retry_;
 
 	ConnectionCallback connectionCallback_;
 }; // end class Connector
