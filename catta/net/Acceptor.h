@@ -24,10 +24,10 @@ public:
 		connectionCallback_ = connectionCallback;
 	}
 
-	bool isListenning() const { return listenning_; }
-	void listen();
+	void start();
 
 private:
+	void listen();
 	void handleRead();	// read event active
 
 	EventLoop* loop_;

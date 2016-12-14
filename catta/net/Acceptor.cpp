@@ -27,6 +27,10 @@ Acceptor::~Acceptor() {
 	watcher_.stop();
 }
 
+void Acceptor::start() {
+	loop_->runInLoop(std::bind(&Acceptor::listen, this));
+}
+
 void Acceptor::listen() {
 	if (!listenning_) {
 		listenning_ = true;

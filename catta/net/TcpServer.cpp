@@ -33,7 +33,7 @@ void TcpServer::setThreadNum(int numThreads) {
 void TcpServer::listen() {
 	if (!listen_.test_and_set()) {
 		threadPool_->start();
-		loop_->runInLoop(std::bind(&Acceptor::listen, acceptor_.get()));
+		acceptor_->start();
 	}
 }
 

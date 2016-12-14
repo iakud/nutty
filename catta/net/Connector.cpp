@@ -59,7 +59,7 @@ void Connector::connecting() {
 	watcher_->start();
 }
 
-void Connector::removeAndResetWatcher() {
+void Connector::stopAndResetWatcher() {
 	watcher_->stop();
 	watcher_->disableAll();
 	loop_->queueInLoop(std::bind(&Connector::resetWatcher, shared_from_this()));
@@ -88,7 +88,7 @@ void Connector::retrying() {
 
 void Connector::handleError() {
 	if (connecting_) {
-		removeAndResetWatcher();
+		stopAndResetWatcher();
 		int err = connectSocket_->getError();
 		(void)err; // FIXME : err
 		
@@ -98,7 +98,7 @@ void Connector::handleError() {
 
 void Connector::handleWrite() {
 	if (connecting_) {
-		removeAndResetWatcher();
+		stopAndResetWatcher();
 		int err = connectSocket_->getError();
 		if (err) {
 			retry();
@@ -134,8 +134,9 @@ void Connector::stopInLoop() {
 	if (connect_) {
 		connect_ = false;
 		if (connecting_) {
-			removeAndResetWatcher();
-			retry();
+			stopAndResetWatcher();
+			Socket::close(connectSocket_->fd());
+			connectSocket_.reset();
 		}
 	}
 }

@@ -31,7 +31,7 @@ public:
 private:
 	void connect();
 	void connecting();
-	void removeAndResetWatcher();
+	void stopAndResetWatcher();
 	void resetWatcher();
 	void retry();
 	void retrying();
