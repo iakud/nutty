@@ -1,7 +1,7 @@
 #include <catta/net/Acceptor.h>
 
-#include <catta/net/InetAddress.h>
 #include <catta/net/EventLoop.h>
+#include <catta/net/InetAddress.h>
 
 #include <fcntl.h>
 #include <unistd.h>

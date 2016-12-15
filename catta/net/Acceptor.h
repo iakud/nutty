@@ -20,8 +20,8 @@ public:
 	explicit Acceptor(EventLoop* loop, const InetAddress& localAddr);
 	~Acceptor();
 
-	void setConnectionCallback(ConnectionCallback&& connectionCallback) {
-		connectionCallback_ = connectionCallback;
+	void setConnectionCallback(ConnectionCallback&& cb) {
+		connectionCallback_ = cb;
 	}
 
 	void start();

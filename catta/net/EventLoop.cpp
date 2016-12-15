@@ -62,18 +62,18 @@ void EventLoop::loop() {
 	}
 }
 
-void EventLoop::runInLoop(Functor&& callback) {
+void EventLoop::runInLoop(Functor&& cb) {
 	if (isInLoopThread()) {
-		callback();
+		cb();
 	} else {
-		queueInLoop(std::move(callback));
+		queueInLoop(std::move(cb));
 	}
 }
 
-void EventLoop::queueInLoop(Functor&& callback) {
+void EventLoop::queueInLoop(Functor&& cb) {
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
-		//pendingFunctors_.push_back(std::move(callback));
+		pendingFunctors_.push_back(std::move(cb));
 	}
 	if (!isInLoopThread() || callingPendingFunctors_) {
 		wakeup();
@@ -99,8 +99,8 @@ void EventLoop::doPendingFunctors() {
 		std::unique_lock<std::mutex> lock(mutex_);
 		functors.swap(pendingFunctors_);
 	}
-	for (Functor& callback : functors) {
-		callback();
+	for (Functor& cb : functors) {
+		cb();
 	}
 	callingPendingFunctors_ = false;
 }

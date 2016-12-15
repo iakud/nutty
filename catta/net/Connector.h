@@ -20,8 +20,8 @@ public:
 	explicit Connector(EventLoop* loop, const InetAddress& peerAddr);
 	~Connector();
 
-	void setConnectionCallback(ConnectionCallback&& connectionCallback) {
-		connectionCallback_ = connectionCallback;
+	void setConnectionCallback(ConnectionCallback&& cb) {
+		connectionCallback_ = cb;
 	}
 
 	void start();

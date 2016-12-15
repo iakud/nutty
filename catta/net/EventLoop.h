@@ -26,8 +26,8 @@ public:
 	void loop();
 	void loopOnce();
 
-	void runInLoop(Functor&& callback);
-	void queueInLoop(Functor&& callback);
+	void runInLoop(Functor&& cb);
+	void queueInLoop(Functor&& cb);
 
 	bool isInLoopThread() const { return threadId_ == CurrentThread::tid(); }
 

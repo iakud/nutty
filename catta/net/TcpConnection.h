@@ -41,7 +41,7 @@ private:
 	enum State { kDisconnected, kConnecting, kConnected, kDisconnecting };
 
 	// for tcpserver and tcpclient
-	typedef std::function<void(TcpConnectionPtr)> CloseCallback;
+	typedef std::function<void(const TcpConnectionPtr&)> CloseCallback;
 	void setCloseCallback(CloseCallback&& cb) { closeCallback_ = cb; }
 
 	void established();
