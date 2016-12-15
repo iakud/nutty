@@ -5,6 +5,80 @@
 
 #include <arpa/inet.h>
 
+namespace catta {
+
+class LinkedBuffer : noncopyable {
+public:
+	LinkedBuffer(uint32_t capacity)
+		: capacity_(capacity)
+		, readIndex_(0)
+		, writeIndex_(0)
+		, next_(nullptr) {
+		buffer_ = static_cast<char*>(std::malloc(capacity_));
+	}
+
+	LinkedBuffer(const void* buf, uint32_t count)
+		: capacity_(count)
+		, readIndex_(0)
+		, writeIndex_(count)
+		, next_(nullptr) {
+		buffer_ = static_cast<char*>(std::malloc(capacity_));
+		std::memcpy(buffer_, buf, count);
+	}
+
+	LinkedBuffer(Buffer&& buffer)
+		: buffer_(buffer.buffer_)
+		, capacity_(buffer.size_)
+		, readIndex_(0)
+		, writeIndex_(buffer.size_)
+		, next_(nullptr) {
+		buffer.buffer_ = nullptr;
+		buffer.size_ = 0;
+	}
+
+	LinkedBuffer(Buffer&& buffer, uint32_t offset)
+		: buffer_(buffer.buffer_)
+		, capacity_(buffer.size_)
+		, readIndex_(offset)
+		, writeIndex_(buffer.size_)
+		, next_(nullptr) {
+		buffer.buffer_ = nullptr;
+		buffer.size_ = 0;
+	}
+
+	~LinkedBuffer() {
+		if (buffer_) {
+			std::free(buffer_);
+		}
+	}
+
+	inline char* data() { return buffer_; }
+	inline char* dataRead() { return buffer_ + readIndex_; }
+	inline char* dataWrite() { return buffer_ + writeIndex_; }
+
+	inline uint32_t capacity() { return capacity_; }
+	inline uint32_t readableSize() { return writeIndex_ - readIndex_; }
+	inline uint32_t writableSize() { return capacity_ - writeIndex_; }
+
+	inline void hasWritten(uint32_t count) { writeIndex_ += count; }
+	inline void hasRead(uint32_t count) { readIndex_ += count; }
+	inline bool empty() { return readIndex_ == writeIndex_; }
+	inline bool full() { return writeIndex_ == capacity_; }
+
+	inline LinkedBuffer* next() { return next_; }
+
+private:
+	char* buffer_;
+	uint32_t capacity_;
+	uint32_t readIndex_;
+	uint32_t writeIndex_;
+	LinkedBuffer* next_;
+
+	friend class ListBuffer;
+}; // end class LinkedBuffer
+
+} // end namespace catta
+
 using namespace catta;
 
 Buffer::Buffer(const void* buf, uint32_t count)
@@ -18,55 +92,27 @@ Buffer::~Buffer() {
 	}
 }
 
-LinkedBuffer::LinkedBuffer(uint32_t capacity)
-	: capacity_(capacity)
-	, readIndex_(0)
-	, writeIndex_(0)
-	, next_(nullptr) {
-	buffer_ = static_cast<char*>(std::malloc(capacity_));
-}
-
-LinkedBuffer::LinkedBuffer(const void* buf, uint32_t count)
-	: capacity_(count)
-	, readIndex_(0)
-	, writeIndex_(count)
-	, next_(nullptr) {
-	buffer_ = static_cast<char*>(std::malloc(capacity_));
-	std::memcpy(buffer_, buf, count);
-}
-
-LinkedBuffer::LinkedBuffer(Buffer&& buffer)
-	: buffer_(buffer.buffer_)
-	, capacity_(buffer.size_)
-	, readIndex_(0)
-	, writeIndex_(buffer.size_)
-	, next_(nullptr) {
-	buffer.buffer_ = nullptr;
-	buffer.size_ = 0;
-}
-
-LinkedBuffer::LinkedBuffer(Buffer&& buffer, uint32_t offset)
-	: buffer_(buffer.buffer_)
-	, capacity_(buffer.size_)
-	, readIndex_(offset)
-	, writeIndex_(buffer.size_)
-	, next_(nullptr) {
-	buffer.buffer_ = nullptr;
-	buffer.size_ = 0;
-}
-
-LinkedBuffer::~LinkedBuffer() {
-	if (buffer_) {
-		std::free(buffer_);
+void ListBuffer::pushTail(LinkedBuffer* buffer) {
+	if (buffer == nullptr || buffer->next_) return;
+	if (tail_) {
+		tail_->next_ = buffer;
+		tail_ = buffer;
+	} else {
+		head_ = tail_ = buffer;
 	}
+	++size_;
 }
 
-ListBuffer::~ListBuffer() {
-	for (uint32_t i = 0; i < size_; ++i) {
-		LinkedBuffer* buffer = head_;
+void ListBuffer::popHead() {
+	if (head_ == nullptr) return;
+	LinkedBuffer* buffer = head_;
+	if (head_->next_) {
 		head_ = head_->next_;
-		delete buffer;
+		buffer->next_ = nullptr;
+	} else {
+		head_ = tail_ = nullptr;
 	}
+	--size_;
 }
 
 SendBuffer::SendBuffer()
@@ -74,6 +120,11 @@ SendBuffer::SendBuffer()
 }
 
 SendBuffer::~SendBuffer() {
+	while (!buffers_.empty()) {
+		LinkedBuffer* buffer = buffers_.head();
+		buffers_.popHead();
+		delete buffer;
+	}
 }
 
 void SendBuffer::append(const void* buf, uint32_t count) {
@@ -128,6 +179,16 @@ ReceiveBuffer::ReceiveBuffer()
 }
 
 ReceiveBuffer::~ReceiveBuffer() {
+	while (!buffers_.empty()) {
+		LinkedBuffer* buffer = buffers_.head();
+		buffers_.popHead();
+		delete buffer;
+	}
+	while (!extendBuffers_.empty()) {
+		LinkedBuffer* buffer = extendBuffers_.head();
+		buffers_.popHead();
+		delete buffer;
+	}
 }
 
 void ReceiveBuffer::prepareReceive(struct iovec* iov, int& iovcnt) {
