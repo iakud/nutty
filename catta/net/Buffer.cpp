@@ -62,6 +62,7 @@ public:
 
 	inline void hasWritten(uint32_t count) { writeIndex_ += count; }
 	inline void hasRead(uint32_t count) { readIndex_ += count; }
+	inline void reset() { readIndex_ = writeIndex_ = 0; }
 	inline bool empty() { return readIndex_ == writeIndex_; }
 	inline bool full() { return writeIndex_ == capacity_; }
 
@@ -147,31 +148,31 @@ void SendBuffer::append(Buffer&& buf, uint32_t offset) {
 
 void SendBuffer::prepareSend(struct iovec* iov, int& iovcnt) {
 	iovcnt = 0;
-	uint32_t nwrote = 0;
+	uint32_t nread = 0;
 	LinkedBuffer* buffer = buffers_.head();
-	while (buffer && nwrote < kSendSize) {
+	while (buffer && nread < kSendSize) {
 		uint32_t readableSize = buffer->readableSize();
 		iov[iovcnt].iov_base = buffer->dataRead();
 		iov[iovcnt].iov_len = readableSize;
 		++iovcnt;
-		nwrote += readableSize;
+		nread += readableSize;
 		buffer = buffer->next();
 	}
 }
 
 void SendBuffer::hasSent(uint32_t count) {
-	uint32_t nwrote = 0;
-	while (nwrote < count && buffers_.head()) {
+	uint32_t nread = 0;
+	while (nread < count && buffers_.head()) {
 		LinkedBuffer* buffer = buffers_.head();
-		uint32_t readableSize = std::min(buffer->readableSize(), count - nwrote);
+		uint32_t readableSize = std::min(buffer->readableSize(), count - nread);
 		buffer->hasRead(readableSize);
+		nread += readableSize;
 		if (buffer->empty()) {
 			buffers_.popHead();
 			delete buffer;
 		}
-		nwrote += readableSize;
 	}
-	size_ -= nwrote;
+	size_ -= nread;
 }
 
 ReceiveBuffer::ReceiveBuffer()
@@ -188,6 +189,36 @@ ReceiveBuffer::~ReceiveBuffer() {
 		LinkedBuffer* buffer = extendBuffers_.head();
 		buffers_.popHead();
 		delete buffer;
+	}
+}
+
+void ReceiveBuffer::read(void* buf, uint32_t count) {
+	uint32_t nread = 0;
+	while (nread < count && buffers_.head()) {
+		LinkedBuffer* buffer = buffers_.head();
+		uint32_t readableSize = std::min(buffer->readableSize(), count - nread);
+		std::memcpy(static_cast<char*>(buf) + nread, buffer->dataRead(), readableSize);
+		buffer->hasRead(readableSize);
+		nread += readableSize;
+		if (buffer->empty()) {
+			buffers_.popHead();
+			buffer->reset();
+			extendBuffers_.pushTail(buffer);
+		}
+	}
+	size_ -= nread;
+}
+
+void ReceiveBuffer::peek(void* buf, uint32_t count) {
+	uint32_t nread = 0;
+	LinkedBuffer* buffer = buffers_.head();
+	while (nread < count && buffer) {
+		uint32_t readableSize = std::min(buffer->readableSize(), count - nread);
+		std::memcpy(static_cast<char*>(buf) + nread, buffer->dataRead(), readableSize);
+		nread += readableSize;
+		if (readableSize == buffer->readableSize()) {
+			buffer = buffer->next();
+		}
 	}
 }
 

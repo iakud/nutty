@@ -72,6 +72,9 @@ public:
 	ReceiveBuffer();
 	~ReceiveBuffer();
 
+	void read(void* buf, uint32_t count);
+	void peek(void* buf, uint32_t count);
+
 	uint32_t size() { return size_; }
 
 private:
