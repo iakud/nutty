@@ -48,10 +48,7 @@ void TcpConnection::send(const void* buf, uint32_t count) {
 }
 
 void TcpConnection::shutdown() {
-	if (state_ == kConnected) {
-		setState(kDisconnecting);
-		loop_->runInLoop(std::bind(&TcpConnection::shutdownInLoop, this));
-	}
+	loop_->runInLoop(std::bind(&TcpConnection::shutdownInLoop, shared_from_this()));
 }
 
 void TcpConnection::forceClose() {
@@ -88,24 +85,36 @@ void TcpConnection::handleRead() {
 	ssize_t nread = socket_->readv(iov, iovcnt);
 	if (nread > 0) {
 		receiveBuffer_.hasReceived(static_cast<uint32_t>(nread));
+		readCallback_(shared_from_this(), receiveBuffer_);
+	} else if (nread == 0) {
+		handleClose();
+	} else {
+		handleError();
 	}
 }
 
 void TcpConnection::handleWrite() {
-	if (writable_) {
-		return;
-	}
-	struct iovec iov[sendBuffer_.buffersSize()];
-	int iovcnt;
-	sendBuffer_.prepareSend(iov, iovcnt);
-	ssize_t nwrote = socket_->writev(iov, iovcnt);
-	if (nwrote > 0) {
-		sendBuffer_.hasSent(static_cast<uint32_t>(nwrote));
-		if (sendBuffer_.size() == 0) {
-
+	if (watcher_->isWriting()) {
+		struct iovec iov[sendBuffer_.buffersSize()];
+		int iovcnt;
+		sendBuffer_.prepareSend(iov, iovcnt);
+		ssize_t nwrote = socket_->writev(iov, iovcnt);
+		if (nwrote > 0) {
+			sendBuffer_.hasSent(static_cast<uint32_t>(nwrote));
+			if (sendBuffer_.size() == 0) {
+				watcher_->disableWriting();
+				if (writeCallback_) {
+					// loop_->queueInLoop(std::bind(writeCallback_, shared_from_this(), nwrote));
+				}
+				if (state_ == kDisconnecting) {
+					shutdownInLoop();
+				}
+			}
+		} else if (nwrote == 0) {
+			// do nothing
+		} else {
+			// FIXME : log
 		}
-	} else {
-		// FIXME : log
 	}
 }
 
@@ -114,19 +123,27 @@ void TcpConnection::sendInLoop(const void* buf, uint32_t count) {
 		// FIXME : log
 		return;
 	}
-	if (writable_) {
+	if (!watcher_->isWriting() && count > 0) {
 		ssize_t nwrote = socket_->write(buf, count);
-		if (nwrote < 0) {
+		if (nwrote > 0) {
+			if (nwrote < count) {
+				sendBuffer_.append(static_cast<const char*>(buf) + nwrote, count - static_cast<uint32_t>(nwrote));
+				watcher_->enableWriting();
+			} else if (writeCallback_) {
+				// loop_->queueInLoop(std::bind(writeCallback_, shared_from_this(), nwrote));
+			}
+		} else if (nwrote == 0) {
+			sendBuffer_.append(buf, count);
+			watcher_->enableWriting();
+		} else {
 			if (errno != EWOULDBLOCK) {
+				// FIXME log
 				if (errno == EPIPE || errno == ECONNRESET) {
 					return;
 				}
 			}
 			sendBuffer_.append(buf, count);
-			writable_ = false;
-		} else {
-			sendBuffer_.append(static_cast<const char*>(buf) + nwrote, count - static_cast<uint32_t>(nwrote));
-			writable_ = false;
+			watcher_->enableWriting();
 		}
 	}
 }
@@ -136,26 +153,37 @@ void TcpConnection::sendInLoop(BufferPtr& buf) {
 		// FIXME : log
 		return;
 	}
-	if (writable_) {
+	if (!watcher_->isWriting() && buf->size() > 0) {
 		ssize_t nwrote = socket_->write(buf->data(), buf->size());
-		if (nwrote < 0) {
+		if (nwrote > 0) {
+			if (nwrote < buf->size()) {
+				sendBuffer_.append(std::move(*buf), static_cast<uint32_t>(nwrote));
+				watcher_->enableWriting();
+			} else if (writeCallback_) {
+				// loop_->queueInLoop(std::bind(writeCallback_, shared_from_this(), nwrote));
+			}
+		} else if (nwrote == 0) {
+			sendBuffer_.append(std::move(*buf));
+			watcher_->enableWriting();
+		} else {
 			if (errno != EWOULDBLOCK) {
+				// FIXME log
 				if (errno == EPIPE || errno == ECONNRESET) {
 					return;
 				}
 			}
 			sendBuffer_.append(std::move(*buf));
-			writable_ = false;
-		} else {
-			sendBuffer_.append(std::move(*buf), static_cast<uint32_t>(nwrote));
-			writable_ = false;
+			watcher_->enableWriting();
 		}
 	}
 }
 
 void TcpConnection::shutdownInLoop() {
-	if (!watcher_->isWriting()) {
-		socket_->shutdownWrite();
+	if (state_ == kConnected) {
+		setState(kDisconnecting);
+		if (!watcher_->isWriting()) {
+			socket_->shutdownWrite();
+		}
 	}
 }
 
