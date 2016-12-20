@@ -4,6 +4,8 @@
 #include <netinet/tcp.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
+#include <strings.h>  // bzero
 
 using namespace catta;
 
@@ -91,28 +93,29 @@ int Socket::setKeepIdle(int optval) {
 }
 
 int Socket::getError() {
-	return ::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, nullptr, nullptr);
-}
-
-int Socket::getError(int optval) {
+	int optval;
 	socklen_t optlen = static_cast<socklen_t>(sizeof optval);
-	return ::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, &optval, &optlen);
-}
-
-int Socket::getSockName(struct sockaddr_in* addr) {
-	if (addr != nullptr) {
-		socklen_t addrlen = static_cast<socklen_t>(sizeof *addr);
-		return ::getsockname(sockfd_, reinterpret_cast<struct sockaddr*>(addr), &addrlen);
+	if (::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0) {
+		return errno;
 	} else {
-		return ::getsockname(sockfd_, nullptr, nullptr);
+		return optval;
 	}
 }
 
-int Socket::getPeerName(struct sockaddr_in* addr) {
-	if (addr != nullptr) {
-		socklen_t addrlen = static_cast<socklen_t>(sizeof *addr);
-		return ::getpeername(sockfd_, reinterpret_cast<struct sockaddr*>(addr), &addrlen);
-	} else {
-		return ::getpeername(sockfd_, nullptr, nullptr);
+struct sockaddr_in Socket::getSockName() {
+	struct sockaddr_in addr;
+	socklen_t addrlen = static_cast<socklen_t>(sizeof addr);
+	if (::getsockname(sockfd_, reinterpret_cast<struct sockaddr*>(&addr), &addrlen) < 0) {
+		bzero(&addr, sizeof addr);
 	}
+	return addr;
+}
+
+struct sockaddr_in Socket::getPeerName() {
+	struct sockaddr_in addr;
+	socklen_t addrlen = static_cast<socklen_t>(sizeof addr);
+	if (::getpeername(sockfd_, reinterpret_cast<struct sockaddr*>(&addr), &addrlen) < 0) {
+		bzero(&addr, sizeof addr);
+	}
+	return addr;
 }

@@ -14,6 +14,9 @@ Connector::Connector(EventLoop* loop, const InetAddress& peerAddr)
 	, retry_(false) {
 }
 
+Connector::~Connector() {
+}
+
 void Connector::start() {
 	loop_->runInLoop(std::bind(&Connector::startInLoop, shared_from_this()));
 }
@@ -53,8 +56,8 @@ void Connector::connect() {
 void Connector::connecting() {
 	connecting_ = true;
 	watcher_.reset(new Watcher(loop_, connectSocket_->fd()));
+	watcher_->setErrorCallback(std::bind(&Connector::handleError, this));
 	watcher_->setWriteCallback(std::bind(&Connector::handleWrite, this));
-	watcher_->setWriteCallback(std::bind(&Connector::handleError, this));
 	watcher_->enableWriting();
 	watcher_->start();
 }
@@ -103,8 +106,7 @@ void Connector::handleWrite() {
 		if (err) {
 			retry();
 		} else {
-			struct sockaddr_in localSockAddr;
-			connectSocket_->getSockName(&localSockAddr);
+			struct sockaddr_in localSockAddr = connectSocket_->getSockName();
 			const struct sockaddr_in& peerSockAddr = peerAddr_.getSockAddr();
 			if (localSockAddr.sin_port == peerSockAddr.sin_port && localSockAddr.sin_addr.s_addr == peerSockAddr.sin_addr.s_addr) {
 				retry();

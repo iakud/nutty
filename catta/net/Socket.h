@@ -35,9 +35,8 @@ public:
 	int setKeepIdle(int optval);
 
 	int getError();
-	int getError(int optval);
-	int getSockName(struct sockaddr_in* addr);
-	int getPeerName(struct sockaddr_in* addr);
+	struct sockaddr_in getSockName();
+	struct sockaddr_in getPeerName();
 
 private:
 	const int sockfd_;

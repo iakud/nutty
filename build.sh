@@ -2,7 +2,7 @@
 
 SOURCE_DIR=`pwd`
 BUILD_DIR=build
-BUILD_TYPE=release
+BUILD_TYPE=debug
 INSTALL_DIR=${BUILD_TYPE}-install
 BUILD_NO_EXAMPLES=0
 

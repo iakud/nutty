@@ -12,7 +12,7 @@ public:
 	InetAddress() {
 	}
 
-	InetAddress(uint16_t port, const char* ip);
+	InetAddress(const char* ip, uint16_t port);
 
 	InetAddress(const struct sockaddr_in& addr)
 		: addr_(addr) {

@@ -30,6 +30,7 @@ TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
 	watcher_->setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
 
 	socket_->setKeepAlive(true);
+	socket_->setTcpNoDelay(true); // FIXME : for test
 }
 
 TcpConnection::~TcpConnection() {
@@ -80,7 +81,7 @@ void TcpConnection::handleError() {
 
 void TcpConnection::handleRead() {
 	struct iovec iov[2];
-	int iovcnt;
+	int iovcnt = 0;
 	receiveBuffer_.prepareReceive(iov, iovcnt);
 	ssize_t nread = socket_->readv(iov, iovcnt);
 	if (nread > 0) {

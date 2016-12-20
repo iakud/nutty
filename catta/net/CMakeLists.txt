@@ -18,6 +18,7 @@ set(CATTANET_SRCS
 	)
 
 add_library(cattanet ${CATTANET_SRCS})
+target_link_libraries(cattanet cattabase)
 set_target_properties(cattanet PROPERTIES COMPILE_FLAGS "-std=c++14")
 
 install(TARGETS cattanet DESTINATION lib)
