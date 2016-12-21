@@ -1,13 +1,13 @@
-#include <catta/net/Buffer.h>
+#include <nutty/net/Buffer.h>
 
 #include <cstring>
 #include <memory>
 
 #include <arpa/inet.h>
 
-namespace catta {
+namespace nutty {
 
-class LinkedBuffer : noncopyable {
+class LinkedBuffer {
 public:
 	LinkedBuffer(uint32_t capacity)
 		: capacity_(capacity)
@@ -69,6 +69,9 @@ public:
 	inline LinkedBuffer* next() { return next_; }
 
 private:
+	LinkedBuffer(const LinkedBuffer&) = delete;
+	LinkedBuffer& operator=(const LinkedBuffer&) = delete;
+
 	char* buffer_;
 	uint32_t capacity_;
 	uint32_t readIndex_;
@@ -78,9 +81,9 @@ private:
 	friend class ListBuffer;
 }; // end class LinkedBuffer
 
-} // end namespace catta
+} // end namespace nutty
 
-using namespace catta;
+using namespace nutty;
 
 Buffer::Buffer(const void* buf, uint32_t count)
 	: size_(count) {

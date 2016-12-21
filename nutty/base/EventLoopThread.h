@@ -1,17 +1,15 @@
-#ifndef CATTA_NET_EVENTLOOPTHREAD_H
-#define CATTA_NET_EVENTLOOPTHREAD_H
-
-#include <catta/base/noncopyable.h>
+#ifndef NUTTY_BASE_EVENTLOOPTHREAD_H
+#define NUTTY_BASE_EVENTLOOPTHREAD_H
 
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 
-namespace catta {
+namespace nutty {
 
 class EventLoop;
 
-class EventLoopThread : noncopyable {
+class EventLoopThread {
 public:
 	EventLoopThread();
 	~EventLoopThread();
@@ -19,6 +17,9 @@ public:
 	EventLoop* getLoop() { return loop_; }
 
 private:
+	EventLoopThread(const EventLoopThread&) = delete;
+	EventLoopThread& operator=(const EventLoopThread&) = delete;
+	
 	void threadFunc();
 
 	EventLoop* loop_;
@@ -27,6 +28,6 @@ private:
 	std::condition_variable cv_;
 }; // end class EventLoopThread
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_NET_EVENTLOOPTHREAD_H
+#endif // NUTTY_BASE_EVENTLOOPTHREAD_H

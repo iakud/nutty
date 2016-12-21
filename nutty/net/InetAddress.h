@@ -1,11 +1,11 @@
-#ifndef CATTA_NET_INETADDRESS_H
-#define CATTA_NET_INETADDRESS_H
+#ifndef NUTTY_NET_INETADDRESS_H
+#define NUTTY_NET_INETADDRESS_H
 
 #include <cstdint>
 
 #include <arpa/inet.h>
 
-namespace catta {
+namespace nutty {
 
 class InetAddress {
 public:
@@ -30,6 +30,6 @@ private:
 	struct sockaddr_in addr_;
 }; // end class InetAddress
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_NET_INETADDRESS_H
+#endif // NUTTY_NET_INETADDRESS_H

@@ -1,10 +1,10 @@
-#include <catta/net/Connector.h>
+#include <nutty/net/Connector.h>
 
-#include <catta/net/EventLoop.h>
-#include <catta/net/Watcher.h>
-#include <catta/net/Socket.h>
+#include <nutty/base/EventLoop.h>
+#include <nutty/base/Watcher.h>
+#include <nutty/net/Socket.h>
 
-using namespace catta;
+using namespace nutty;
 
 Connector::Connector(EventLoop* loop, const InetAddress& peerAddr)
 	: loop_(loop)

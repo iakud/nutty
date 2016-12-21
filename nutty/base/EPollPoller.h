@@ -1,17 +1,15 @@
-#ifndef CATTA_NET_EPOLLPOLLER_H
-#define CATTA_NET_EPOLLPOLLER_H
-
-#include <catta/base/noncopyable.h>
+#ifndef NUTTY_BASE_EPOLLPOLLER_H
+#define NUTTY_BASE_EPOLLPOLLER_H
 
 #include <vector>
 
 struct epoll_event;
 
-namespace catta {
+namespace nutty {
 
 class Watcher;
 
-class EPollPoller : noncopyable {
+class EPollPoller {
 public:
 	EPollPoller();
 	virtual ~EPollPoller();
@@ -24,12 +22,15 @@ public:
 private:
 	static const int kEventSizeInit = 16;
 
+	EPollPoller(const EPollPoller&) = delete;
+	EPollPoller& operator=(const EPollPoller&) = delete;
+
 	void fillActiveWatchers(int numEvents, std::vector<Watcher*>& activeWatchers);
 
 	int epollfd_;
 	std::vector<struct epoll_event> events_;
 }; // end class EPollPoller
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_NET_EPOLLPOLLER_H
+#endif // NUTTY_BASE_EPOLLPOLLER_H

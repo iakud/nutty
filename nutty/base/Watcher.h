@@ -1,15 +1,13 @@
-#ifndef CATTA_NET_WATCHER_H
-#define CATTA_NET_WATCHER_H
-
-#include <catta/base/noncopyable.h>
+#ifndef NUTTY_BASE_WATCHER_H
+#define NUTTY_BASE_WATCHER_H
 
 #include <functional>
 
-namespace catta {
+namespace nutty {
 
 class EventLoop;
 
-class Watcher : noncopyable {
+class Watcher {
 public:
 	typedef std::function<void()> EventCallback;
 
@@ -40,6 +38,9 @@ public:
 	void stop();
 
 private:
+	Watcher(const Watcher&) = delete;
+	Watcher& operator=(const Watcher&) = delete;
+
 	void update();
 
 	static const int kNoneEvent;
@@ -59,6 +60,6 @@ private:
 	EventCallback writeCallback_;
 }; // end class Watcher
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_NET_WATCHER_H
+#endif // NUTTY_BASE_WATCHER_H

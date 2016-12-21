@@ -1,23 +1,21 @@
-#ifndef CATTA_NET_TCPCONNECTION_H
-#define CATTA_NET_TCPCONNECTION_H
+#ifndef NUTTY_NET_TCPCONNECTION_H
+#define NUTTY_NET_TCPCONNECTION_H
 
-#include <catta/net/Callbacks.h>
-#include <catta/net/Buffer.h>
-#include <catta/net/InetAddress.h>
-
-#include <catta/base/noncopyable.h>
+#include <nutty/net/Callbacks.h>
+#include <nutty/net/Buffer.h>
+#include <nutty/net/InetAddress.h>
 
 #include <memory>
 #include <functional>
 #include <string>
 
-namespace catta {
+namespace nutty {
 
 class EventLoop;
 class Watcher;
 class Socket;
 
-class TcpConnection : noncopyable, public std::enable_shared_from_this<TcpConnection> {
+class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 public:
 	explicit TcpConnection(EventLoop* loop, int sockfd,
 		const InetAddress& localAddr, const InetAddress& peerAddr);
@@ -42,6 +40,10 @@ private:
 
 	// for tcpserver and tcpclient
 	typedef std::function<void(const TcpConnectionPtr&)> CloseCallback;
+
+	TcpConnection(const TcpConnection&) = delete;
+	TcpConnection& operator=(const TcpConnection&) = delete;
+
 	void setCloseCallback(CloseCallback&& cb) { closeCallback_ = cb; }
 
 	void established();
@@ -83,6 +85,6 @@ private:
 	friend class TcpClient;
 }; // end class TcpConnection
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_NET_TCPCONNECTION_H
+#endif // NUTTY_NET_TCPCONNECTION_H

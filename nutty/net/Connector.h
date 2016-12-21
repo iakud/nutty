@@ -1,19 +1,18 @@
-#ifndef CATTA_NET_CONNECTOR_H
-#define CATTA_NET_CONNECTOR_H
+#ifndef NUTTY_NET_CONNECTOR_H
+#define NUTTY_NET_CONNECTOR_H
 
-#include <catta/net/InetAddress.h>
-#include <catta/base/noncopyable.h>
+#include <nutty/net/InetAddress.h>
 
 #include <memory>
 #include <functional>
 
-namespace catta {
+namespace nutty {
 
 class EventLoop;
 class Watcher;
 class Socket;
 
-class Connector : noncopyable, public std::enable_shared_from_this<Connector> {
+class Connector : public std::enable_shared_from_this<Connector> {
 public:
 	typedef std::function<void(int sockfd, const InetAddress& localAddr)> ConnectionCallback;
 
@@ -29,6 +28,9 @@ public:
 	void stop();
 
 private:
+	Connector(const Connector&) = delete;
+	Connector& operator=(const Connector&) = delete;
+	
 	void connect();
 	void connecting();
 	void stopAndResetWatcher();
@@ -53,6 +55,6 @@ private:
 	ConnectionCallback connectionCallback_;
 }; // end class Connector
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_NET_CONNECTOR_H
+#endif // NUTTY_NET_CONNECTOR_H

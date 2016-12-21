@@ -1,13 +1,13 @@
-#include <catta/net/Acceptor.h>
+#include <nutty/net/Acceptor.h>
 
-#include <catta/net/EventLoop.h>
-#include <catta/net/InetAddress.h>
+#include <nutty/net/InetAddress.h>
+#include <nutty/base/EventLoop.h>
 
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 
-using namespace catta;
+using namespace nutty;
 
 Acceptor::Acceptor(EventLoop* loop,const InetAddress& localAddr)
 	: loop_(loop)

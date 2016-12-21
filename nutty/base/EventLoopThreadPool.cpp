@@ -1,8 +1,8 @@
-#include <catta/net/EventLoopThreadPool.h>
+#include <nutty/base/EventLoopThreadPool.h>
 
-#include <catta/net/EventLoopThread.h>
+#include <nutty/base/EventLoopThread.h>
 
-using namespace catta;
+using namespace nutty;
 
 EventLoopThreadPool::EventLoopThreadPool(EventLoop* baseLoop)
 	: baseLoop_(baseLoop)

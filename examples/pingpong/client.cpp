@@ -1,12 +1,12 @@
-#include <catta/net/TcpClient.h>
-#include <catta/net/EventLoop.h>
-#include <catta/net/InetAddress.h>
+#include <nutty/net/TcpClient.h>
+#include <nutty/net/InetAddress.h>
+#include <nutty/base/EventLoop.h>
 
 #include <string>
 
 #include <iostream>
 
-using namespace catta;
+using namespace nutty;
 
 int64_t bytesRead_ = 0;
 int64_t bytesWritten_ = 0;

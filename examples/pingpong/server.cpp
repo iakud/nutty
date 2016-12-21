@@ -1,12 +1,11 @@
-#include <catta/net/TcpServer.h>
-#include <catta/net/EventLoop.h>
-
-#include <catta/net/InetAddress.h>
+#include <nutty/net/TcpServer.h>
+#include <nutty/net/InetAddress.h>
+#include <nutty/base/EventLoop.h>
 
 #include <iostream>
 #include <string>
 
-using namespace catta;
+using namespace nutty;
 
 void onConnect(const TcpConnectionPtr& conn) {
 	//conn->setTcpNoDelay(true);

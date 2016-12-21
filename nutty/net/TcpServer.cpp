@@ -1,11 +1,10 @@
-#include <catta/net/TcpServer.h>
+#include <nutty/net/TcpServer.h>
 
-#include <catta/net/Acceptor.h>
-#include <catta/net/EventLoop.h>
+#include <nutty/net/Acceptor.h>
+#include <nutty/base/EventLoop.h>
+#include <nutty/base/EventLoopThreadPool.h>
 
-#include <catta/net/EventLoopThreadPool.h>
-
-using namespace catta;
+using namespace nutty;
 
 TcpServer::TcpServer(EventLoop* loop, const InetAddress& localAddr)
 	: loop_(loop)

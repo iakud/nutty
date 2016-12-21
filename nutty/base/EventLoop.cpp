@@ -1,12 +1,12 @@
-#include <catta/net/EventLoop.h>
+#include <nutty/base/EventLoop.h>
 
-#include <catta/net/EPollPoller.h>
-#include <catta/net/Watcher.h>
+#include <nutty/base/EPollPoller.h>
+#include <nutty/base/Watcher.h>
 
 #include <sys/eventfd.h>
 #include <unistd.h>
 
-using namespace catta;
+using namespace nutty;
 
 namespace {
 

@@ -1,9 +1,9 @@
-#ifndef CATTA_NET_SOCKET_H
-#define CATTA_NET_SOCKET_H
+#ifndef NUTTY_NET_SOCKET_H
+#define NUTTY_NET_SOCKET_H
 
 #include <arpa/inet.h>
 
-namespace catta {
+namespace nutty {
 
 class Socket {
 public:
@@ -42,6 +42,6 @@ private:
 	const int sockfd_;
 }; // end class Socket
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_NET_SOCKET_H
+#endif // NUTTY_NET_SOCKET_H

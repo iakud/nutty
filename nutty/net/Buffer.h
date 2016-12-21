@@ -1,15 +1,13 @@
-#ifndef CATTA_NET_BUFFER_H
-#define CATTA_NET_BUFFER_H
-
-#include <catta/base/noncopyable.h>
+#ifndef NUTTY_NET_BUFFER_H
+#define NUTTY_NET_BUFFER_H
 
 #include <cstdint>
 
 struct iovec;
 
-namespace catta {
+namespace nutty {
 
-class Buffer : noncopyable {
+class Buffer {
 public:
 	Buffer(const void* buf, uint32_t count);
 	~Buffer();
@@ -17,6 +15,9 @@ public:
 	inline char* data() { return buffer_; }
 	inline uint32_t size() { return size_; }
 private:
+	Buffer(const Buffer&) = delete;
+	Buffer& operator=(const Buffer&) = delete;
+
 	char* buffer_;
 	uint32_t size_;
 
@@ -25,7 +26,7 @@ private:
 
 class LinkedBuffer;
 
-class ListBuffer : noncopyable {
+class ListBuffer {
 public:
 	ListBuffer() : head_(nullptr), tail_(nullptr), size_(0) {}
 
@@ -38,12 +39,15 @@ public:
 	inline bool empty() { return size_ == 0; }
 
 private:
+	ListBuffer(const ListBuffer&) = delete;
+	ListBuffer& operator=(const ListBuffer&) = delete;
+
 	LinkedBuffer* head_;
 	LinkedBuffer* tail_;
 	uint32_t size_;
 }; // end class ListBuffer
 
-class SendBuffer : noncopyable {
+class SendBuffer {
 public:
 	SendBuffer();
 	~SendBuffer();
@@ -57,6 +61,9 @@ public:
 private:
 	static const uint32_t kSendSize = 8 * 1024;
 
+	SendBuffer(const SendBuffer&) = delete;
+	SendBuffer& operator=(const SendBuffer&) = delete;
+
 	inline int buffersSize() { return buffers_.size(); }
 	void prepareSend(struct iovec* iov, int& iovcnt);
 	void hasSent(uint32_t count);
@@ -67,7 +74,7 @@ private:
 	friend class TcpConnection;
 }; // end class SendBuffer
 
-class ReceiveBuffer : noncopyable {
+class ReceiveBuffer {
 public:
 	ReceiveBuffer();
 	~ReceiveBuffer();
@@ -80,6 +87,9 @@ public:
 private:
 	static const uint32_t kReceiveSize = 8 * 1024;
 
+	ReceiveBuffer(const ReceiveBuffer&) = delete;
+	ReceiveBuffer& operator=(const ReceiveBuffer&) = delete;
+
 	void prepareReceive(struct iovec* iov, int& iovcnt);
 	void hasReceived(uint32_t count);
 
@@ -90,6 +100,6 @@ private:
 	friend class TcpConnection;
 }; // end class ReceiveBuffer
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_NET_BUFFER_H
+#endif // NUTTY_NET_BUFFER_H

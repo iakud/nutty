@@ -1,19 +1,17 @@
-#ifndef CATTA_NET_ACCEPTOR_H
-#define CATTA_NET_ACCEPTOR_H
+#ifndef NUTTY_NET_ACCEPTOR_H
+#define NUTTY_NET_ACCEPTOR_H
 
-#include <catta/net/Watcher.h>
-#include <catta/net/Socket.h>
-
-#include <catta/base/noncopyable.h>
+#include <nutty/net/Socket.h>
+#include <nutty/base/Watcher.h>
 
 #include <functional>
 
-namespace catta {
+namespace nutty {
 
 class EventLoop;
 class InetAddress;
 
-class Acceptor : noncopyable {
+class Acceptor {
 public:
 	typedef std::function<void(int sockfd, const InetAddress& peerAddr)> ConnectionCallback;
 
@@ -27,6 +25,9 @@ public:
 	void start();
 
 private:
+	Acceptor(const Acceptor&) = delete;
+	Acceptor& operator=(const Acceptor&) = delete;
+
 	void listen();
 	void handleRead();	// read event active
 
@@ -39,6 +40,6 @@ private:
 	ConnectionCallback connectionCallback_;
 }; // end class Acceptor
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_NET_ACCEPTOR_H
+#endif // NUTTY_NET_ACCEPTOR_H

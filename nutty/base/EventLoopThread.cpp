@@ -1,8 +1,8 @@
-#include <catta/net/EventLoopThread.h>
+#include <nutty/base/EventLoopThread.h>
 
-#include <catta/net/EventLoop.h>
+#include <nutty/base/EventLoop.h>
 
-using namespace catta;
+using namespace nutty;
 
 EventLoopThread::EventLoopThread()
 	: loop_(nullptr)

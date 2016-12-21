@@ -1,12 +1,10 @@
-#ifndef CATTA_NET_EVENTLOOPTHREADPOOL_H
-#define CATTA_NET_EVENTLOOPTHREADPOOL_H
-
-#include <catta/base/noncopyable.h>
+#ifndef NUTTY_BASE_EVENTLOOPTHREADPOOL_H
+#define NUTTY_BASE_EVENTLOOPTHREADPOOL_H
 
 #include <vector>
 #include <memory>
 
-namespace catta {
+namespace nutty {
 
 class EventLoop;
 class EventLoopThread;
@@ -22,6 +20,9 @@ public:
 	EventLoop* getLoop();
 
 private:
+	EventLoopThreadPool(const EventLoopThreadPool&) = delete;
+	EventLoopThreadPool& operator=(const EventLoopThreadPool&) = delete;
+
 	EventLoop* baseLoop_;
 	bool started_;
 	int numThreads_;
@@ -30,6 +31,6 @@ private:
 	std::vector<EventLoop*> loops_;
 }; // end class EventLoopThreadPool
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_NET_EVENTLOOPTHREADPOOL_H
+#endif // NUTTY_BASE_EVENTLOOPTHREADPOOL_H

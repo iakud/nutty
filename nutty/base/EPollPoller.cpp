@@ -1,11 +1,11 @@
-#include <catta/net/EPollPoller.h>
+#include <nutty/base/EPollPoller.h>
 
-#include <catta/net/Watcher.h>
+#include <nutty/base/Watcher.h>
 
 #include <sys/epoll.h>
 #include <unistd.h>
 
-using namespace catta;
+using namespace nutty;
 
 EPollPoller::EPollPoller()
 	: epollfd_(::epoll_create1(EPOLL_CLOEXEC))

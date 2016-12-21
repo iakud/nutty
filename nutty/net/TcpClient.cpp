@@ -1,9 +1,9 @@
-#include <catta/net/TcpClient.h>
+#include <nutty/net/TcpClient.h>
 
-#include <catta/net/Connector.h>
-#include <catta/net/EventLoop.h>
+#include <nutty/net/Connector.h>
+#include <nutty/base/EventLoop.h>
 
-using namespace catta;
+using namespace nutty;
 
 TcpClient::TcpClient(EventLoop* loop, const InetAddress& peerAddr)
 	: loop_(loop)

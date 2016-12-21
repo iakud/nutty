@@ -1,12 +1,6 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 
-# aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} CATTANET_SRCS)
-set(CATTANET_SRCS
-	Watcher.cpp
-	EventLoop.cpp
-	EventLoopThread.cpp
-	EventLoopThreadPool.cpp
-	EPollPoller.cpp
+set(NUTTY_NET_SRCS
 	InetAddress.cpp
 	Socket.cpp
 	Acceptor.cpp
@@ -17,14 +11,13 @@ set(CATTANET_SRCS
 	TcpClient.cpp
 	)
 
-add_library(cattanet ${CATTANET_SRCS})
-target_link_libraries(cattanet cattabase)
-set_target_properties(cattanet PROPERTIES COMPILE_FLAGS "-std=c++14")
+add_library(nutty_net ${NUTTY_NET_SRCS})
+target_link_libraries(nutty_net nutty_base)
 
-install(TARGETS cattanet DESTINATION lib)
+# install(TARGETS nutty_net DESTINATION lib)
 
 file(GLOB HEADERS "*.h")
-install(FILES ${HEADERS} DESTINATION include/catta/net)
+install(FILES ${HEADERS} DESTINATION include/nutty/net)
 
 if (NOT CMAKE_BUILD_NO_EXAMPLES)
 	add_subdirectory(tests)

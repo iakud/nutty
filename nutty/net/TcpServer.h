@@ -1,22 +1,21 @@
-#ifndef CATTA_NET_TCPSERVER_H
-#define CATTA_NET_TCPSERVER_H
+#ifndef NUTTY_NET_TCPSERVER_H
+#define NUTTY_NET_TCPSERVER_H
 
-#include <catta/net/TcpConnection.h>
-#include <catta/net/InetAddress.h>
-#include <catta/base/noncopyable.h>
+#include <nutty/net/TcpConnection.h>
+#include <nutty/net/InetAddress.h>
 
 #include <memory>
 #include <functional>
 #include <unordered_map>
 #include <atomic>
 
-namespace catta {
+namespace nutty {
 
 class EventLoop;
 class Acceptor;
 class EventLoopThreadPool;
 
-class TcpServer : noncopyable {
+class TcpServer {
 public:
 	TcpServer(EventLoop* loop, const InetAddress& localAddr);
 	~TcpServer();
@@ -31,6 +30,9 @@ public:
 	void start();
 
 private:
+	TcpServer(const TcpServer&) = delete;
+	TcpServer& operator=(const TcpServer&) = delete;
+
 	void handleConnection(int sockfd, const InetAddress& peerAddr);
 	void removeConnection(const int sockfd, const TcpConnectionPtr& connection);
 	void removeConnectionInLoop(const int sockfd, const TcpConnectionPtr& connection);
@@ -48,6 +50,6 @@ private:
 	WriteCallback writeCallback_;
 }; // end class TcpServer
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // IAK_NET_TCPSERVER_H
+#endif // NUTTY_NET_TCPSERVER_H

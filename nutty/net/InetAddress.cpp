@@ -1,8 +1,8 @@
-#include <catta/net/InetAddress.h>
+#include <nutty/net/InetAddress.h>
 
 #include <string.h>
 
-using namespace catta;
+using namespace nutty;
 
 InetAddress::InetAddress(const char* ip, uint16_t port) {
 	::bzero(&addr_, sizeof(addr_));

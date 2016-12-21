@@ -1,10 +1,10 @@
-#ifndef CATTA_NET_CALLBACKS_H
-#define CATTA_NET_CALLBACKS_H
+#ifndef NUTTY_NET_CALLBACKS_H
+#define NUTTY_NET_CALLBACKS_H
 
 #include <functional>
 #include <memory>
 
-namespace catta {
+namespace nutty {
 
 class ReceiveBuffer;
 class TcpConnection;
@@ -19,6 +19,6 @@ typedef std::function<void(const TcpConnectionPtr&)> DisconnectCallback;
 void defaultConnectCallback(const TcpConnectionPtr&);
 void defaultReadCallback(const TcpConnectionPtr&, ReceiveBuffer&);
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_NET_CALLBACKS_H
+#endif // NUTTY_NET_CALLBACKS_H

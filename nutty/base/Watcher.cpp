@@ -1,10 +1,10 @@
-#include <catta/net/Watcher.h>
+#include <nutty/base/Watcher.h>
 
-#include <catta/net/EventLoop.h>
+#include <nutty/base/EventLoop.h>
 
 #include <sys/epoll.h>
 
-using namespace catta;
+using namespace nutty;
 
 const int Watcher::kNoneEvent = 0;
 const int Watcher::kReadEvent = EPOLLIN | EPOLLPRI;

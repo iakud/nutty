@@ -1,4 +1,4 @@
-#include <catta/net/Socket.h>
+#include <nutty/net/Socket.h>
 
 #include <sys/socket.h>
 #include <netinet/tcp.h>
@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <strings.h>  // bzero
 
-using namespace catta;
+using namespace nutty;
 
 int Socket::create() {
 	int sockfd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP);

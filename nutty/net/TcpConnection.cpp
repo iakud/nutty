@@ -1,10 +1,10 @@
-#include <catta/net/TcpConnection.h>
+#include <nutty/net/TcpConnection.h>
 
-#include <catta/net/EventLoop.h>
-#include <catta/net/Socket.h>
-#include <catta/net/Watcher.h>
+#include <nutty/net/Socket.h>
+#include <nutty/base/Watcher.h>
+#include <nutty/base/EventLoop.h>
 
-using namespace catta;
+using namespace nutty;
 
 void defaultConnectCallback(const TcpConnectionPtr& connection) {
 

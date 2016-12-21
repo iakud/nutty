@@ -1,20 +1,19 @@
-#ifndef CATTA_NET_EVENTLOOP_H
-#define CATTA_NET_EVENTLOOP_H
+#ifndef NUTTY_BASE_EVENTLOOP_H
+#define NUTTY_BASE_EVENTLOOP_H
 
-#include <catta/base/noncopyable.h>
-#include <catta/base/Thread.h>
+#include <nutty/base/Thread.h>
 
 #include <mutex>
 #include <vector>
 #include <memory>
 #include <functional>
 
-namespace catta {
+namespace nutty {
 
 class Watcher;
 class EPollPoller;
 
-class EventLoop : noncopyable {
+class EventLoop {
 public:
 	typedef std::function<void()> Functor;
 
@@ -32,6 +31,9 @@ public:
 	bool isInLoopThread() const { return threadId_ == CurrentThread::tid(); }
 
 private:
+	EventLoop(const EventLoop&) = delete;
+	EventLoop& operator=(const EventLoop&) = delete;
+
 	void addWatcher(Watcher* watcher);
 	void updateWatcher(Watcher* watcher);
 	void removeWatcher(Watcher* watcher);
@@ -56,6 +58,6 @@ private:
 	friend class Watcher;
 }; // end class EventLoop
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_NET_EVENTLOOP_H
+#endif // NUTTY_BASE_EVENTLOOP_H
