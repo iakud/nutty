@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(catta CXX)
+project(nutty CXX)
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE "Debug")
@@ -40,7 +40,7 @@ string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE)
 
 message(STATUS "CXX_FLAGS = " ${CMAKE_CXX_FLAGS} " " ${CMAKE_CXX_FLAGS_${BUILD_TYPE}})
 
-add_subdirectory(catta)
+add_subdirectory(nutty)
 
 if(NOT CMAKE_BUILD_NO_EXAMPLES)
 	add_subdirectory(examples)
