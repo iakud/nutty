@@ -1,4 +1,4 @@
-#include <catta/util/FileUtil.h>
+#include <nutty/util/FileUtil.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-using namespace catta;
+using namespace nutty;
 
 FileReader::FileReader(const char* filename)
 	: fd_(::open(filename, O_RDONLY | O_CLOEXEC))

@@ -1,15 +1,13 @@
-#ifndef CATTA_UTIL_SEMPHORE_H
-#define CATTA_UTIL_SEMPHORE_H
-
-#include <catta/base/noncopyable.h>
+#ifndef NUTTY_UTIL_SEMPHORE_H
+#define NUTTY_UTIL_SEMPHORE_H
 
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
 
-namespace catta {
+namespace nutty {
 
-class Semaphore : noncopyable {
+class Semaphore {
 public:
 	explicit Semaphore(int count = 0) : count_(count) {}
 
@@ -61,11 +59,14 @@ public:
 	}
 
 private:
+	Semaphore(const Semaphore&) = delete;
+	Semaphore& operator=(const Semaphore&) = delete;
+
 	std::mutex mutex_;
 	std::condition_variable cv_;
 	int count_;
 }; // end class Semaphore
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_UTIL_SEMPHORE_H
+#endif // NUTTY_UTIL_SEMPHORE_H

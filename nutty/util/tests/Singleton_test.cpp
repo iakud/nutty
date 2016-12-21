@@ -1,11 +1,11 @@
-#include <catta/base/Singleton.h>
-
-#include <catta/base/noncopyable.h>
+#include <nutty/util/Singleton.h>
 
 #include <thread>
 #include <iostream>
 
-class Test : catta::noncopyable {
+using namespace nutty;
+
+class Test {
 public:
 	Test() {
 		std::cout << "constructing " << this << std::endl;
@@ -19,10 +19,13 @@ public:
 	void setName(const std::string& name) { name_ = name; }
 
 private:
+	Test(const Test&) = delete;
+	Test& operator=(const Test&) = delete;
+
 	std::string name_;
 };
 
-class TestNoDestroy : catta::noncopyable {
+class TestNoDestroy {
 public:
 	TestNoDestroy() {
 		std::cout << "constructing no destroy " << this << std::endl;
@@ -34,17 +37,21 @@ public:
 
 	// tag no_destroy for Singleton<T>
 	void no_destroy();
+
+private:
+	TestNoDestroy(const TestNoDestroy&) = delete;
+	TestNoDestroy& operator=(const TestNoDestroy&) = delete;
 };
 
 void threadFunc() {
-	catta::Singleton<Test>::instance().setName("two");
+	Singleton<Test>::instance().setName("two");
 }
 
 int main() {
-	catta::Singleton<Test>::instance().setName("one");
+	Singleton<Test>::instance().setName("one");
 	std::thread t(threadFunc);
 	t.join();
-	std::cout << "name = " <<  catta::Singleton<Test>::instance().getName() << std::endl;
-	catta::Singleton<TestNoDestroy>::instance();
+	std::cout << "name = " <<  Singleton<Test>::instance().getName() << std::endl;
+	Singleton<TestNoDestroy>::instance();
 	return 0;
 }

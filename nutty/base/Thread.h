@@ -1,9 +1,9 @@
-#ifndef CATTA_BASE_CURRENTTHREAD_h
-#define CATTA_BASE_CURRENTTHREAD_h
+#ifndef NUTTY_BASE_CURRENTTHREAD_h
+#define NUTTY_BASE_CURRENTTHREAD_h
 
 #include <unistd.h>
 
-namespace catta {
+namespace nutty {
 
 extern thread_local pid_t t_cachedTid;
 
@@ -22,6 +22,6 @@ private:
 	static pid_t getTid();
 };
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_BASE_CURRENTTHREAD_h
+#endif // NUTTY_BASE_CURRENTTHREAD_h

@@ -1,17 +1,15 @@
-#ifndef CATTA_UTIL_BLOCKINGQUEUE_H
-#define CATTA_UTIL_BLOCKINGQUEUE_H
-
-#include <catta/base/noncopyable.h>
+#ifndef NUTTY_UTIL_BLOCKINGQUEUE_H
+#define NUTTY_UTIL_BLOCKINGQUEUE_H
 
 #include <mutex>
 #include <condition_variable>
 #include <deque>
 #include <assert.h>
 
-namespace catta {
+namespace nutty {
 
 template<typename T>
-class BlockingQueue : noncopyable {
+class BlockingQueue {
 public:
 	BlockingQueue()
 		: mutex_()
@@ -42,11 +40,14 @@ public:
 	}
 
 private:
+	BlockingQueue(const BlockingQueue&) = delete;
+	BlockingQueue& operator=(const BlockingQueue&) = delete;
+	
 	std::mutex mutex_;
 	std::condition_variable cv_;
 	std::deque<T> queue_;
 }; // end class BlockingQueue
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif  // CATTA_UTIL_BLOCKINGQUEUE_H
+#endif  // NUTTY_UTIL_BLOCKINGQUEUE_H

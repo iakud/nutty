@@ -1,17 +1,15 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 
-# aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} CATTABASE_SRCS)
-set(CATTABASE_SRCS
+set(NUTTY_BASE_SRCS
 	Thread.cpp
 	)
 
-add_library(cattabase ${CATTABASE_SRCS})
-set_target_properties(cattabase PROPERTIES COMPILE_FLAGS "-std=c++14")
+add_library(nutty_base ${NUTTY_BASE_SRCS})
 
-install(TARGETS cattabase DESTINATION lib)
+install(TARGETS nutty_base DESTINATION lib)
 
 file(GLOB HEADERS "*.h")
-install(FILES ${HEADERS} DESTINATION include/catta/base)
+install(FILES ${HEADERS} DESTINATION include/nutty/base)
 
 if (NOT CMAKE_BUILD_NO_EXAMPLES)
 	add_subdirectory(tests)

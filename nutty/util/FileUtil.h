@@ -1,13 +1,11 @@
-#ifndef CATTA_UTIL_FILEUTIL_H
-#define CATTA_UTIL_FILEUTIL_H
-
-#include <catta/base/noncopyable.h>
+#ifndef NUTTY_UTIL_FILEUTIL_H
+#define NUTTY_UTIL_FILEUTIL_H
 
 #include <string>
 
-namespace catta {
+namespace nutty {
 
-class FileReader : noncopyable {
+class FileReader {
 public:
 	static int readFile(const char* filename,
 			std::string& content,
@@ -20,6 +18,9 @@ public:
 	FileReader(const char* filename);
 	~FileReader();
 
+	FileReader(const FileReader&) = delete;
+	FileReader& operator=(const FileReader&) = delete;
+
 	int readToString(std::string& content, size_t size);
 
 private:
@@ -27,6 +28,6 @@ private:
 	int err_;
 }; // end class FileReader
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_UTIL_FILEUTIL_H
+#endif // NUTTY_UTIL_FILEUTIL_H

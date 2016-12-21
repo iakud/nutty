@@ -1,17 +1,15 @@
-#ifndef CATTA_UTIL_BOUNDEDBLOCKINGQUEUE_H
-#define CATTA_UTIL_BOUNDEDBLOCKINGQUEUE_H
-
-#include <catta/base/noncopyable.h>
+#ifndef NUTTY_UTIL_BOUNDEDBLOCKINGQUEUE_H
+#define NUTTY_UTIL_BOUNDEDBLOCKINGQUEUE_H
 
 #include <mutex>
 #include <condition_variable>
 #include <deque>
 #include <assert.h>
 
-namespace catta {
+namespace nutty {
 
 template<typename T>
-class BoundedBlockingQueue : noncopyable {
+class BoundedBlockingQueue {
 
 public:
 	explicit BoundedBlockingQueue(size_t capacity)
@@ -64,6 +62,9 @@ public:
 	}
 
 private:
+	BoundedBlockingQueue(const BoundedBlockingQueue&) = delete;
+	BoundedBlockingQueue& operator=(const BoundedBlockingQueue&) = delete;
+	
 	std::mutex mutex_;
 	std::condition_variable cvnotempty_; // not empty
 	std::condition_variable cvnotfull_; // not full
@@ -71,6 +72,6 @@ private:
 	std::deque<T> queue_;
 }; // end class BoundedBlockingQueue
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif  // CATTA_UTIL_BOUNDEDBLOCKINGQUEUE_H
+#endif  // NUTTY_UTIL_BOUNDEDBLOCKINGQUEUE_H

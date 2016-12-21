@@ -1,15 +1,13 @@
-#ifndef CATTA_UTIL_SINGLETON_H
-#define CATTA_UTIL_SINGLETON_H
-
-#include <catta/base/noncopyable.h>
+#ifndef NUTTY_UTIL_SINGLETON_H
+#define NUTTY_UTIL_SINGLETON_H
 
 #include <mutex>
 #include <cstdlib> // std::atexit
 
-namespace catta {
+namespace nutty {
 
 template<typename T>
-class Singleton : noncopyable {
+class Singleton {
 public:
 	static T& instance() {
 		std::call_once(s_once_, Singleton::init);
@@ -19,6 +17,9 @@ public:
 private:
 	Singleton();
 	~Singleton();
+
+	Singleton(const Singleton&) = delete;
+	Singleton& operator=(const Singleton&) = delete;
 
 	struct has_no_destroy {
 		template <typename U>
@@ -55,6 +56,6 @@ std::once_flag Singleton<T>::s_once_;
 template<typename T>
 T* Singleton<T>::s_value_ = nullptr;
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_UTIL_SINGLETON_H
+#endif // NUTTY_UTIL_SINGLETON_H

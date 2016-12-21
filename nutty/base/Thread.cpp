@@ -1,14 +1,14 @@
-#include <catta/base/Thread.h>
+#include <nutty/base/Thread.h>
 
 #include <sys/syscall.h>
 
-namespace catta {
+namespace nutty {
 
 thread_local pid_t t_cachedTid = 0;
 
-} // end namespace catta
+} // end namespace nutty
 
-using namespace catta;
+using namespace nutty;
 
 pid_t CurrentThread::getTid() {
 	return static_cast<pid_t>(::syscall(SYS_gettid));

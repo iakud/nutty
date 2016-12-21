@@ -1,12 +1,12 @@
-#include <catta/util/Semaphore.h>
-
-#include <catta/base/noncopyable.h>
+#include <nutty/util/Semaphore.h>
 
 #include <thread>
 
 #include <iostream>
 
-class Test : catta::noncopyable {
+using namespace nutty;
+
+class Test {
 public:
 	Test()
 		: sem_()
@@ -45,6 +45,9 @@ public:
 	}
 
 private:
+	Test(const Test&) = delete;
+	Test& operator=(const Test&) = delete;
+	
 	void threadFunc() {
 		std::cout << "send signal" << std::endl;
 		sem_.notify();
@@ -55,7 +58,7 @@ private:
 		sem_.notify();
 	}
 
-	catta::Semaphore sem_;
+	Semaphore sem_;
 	std::thread thread_;
 };
 

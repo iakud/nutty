@@ -1,6 +1,6 @@
-#include <catta/util/CountDownLatch.h>
+#include <nutty/util/CountDownLatch.h>
 
-using namespace catta;
+using namespace nutty;
 
 CountDownLatch::CountDownLatch(int count)
 	: mutex_()

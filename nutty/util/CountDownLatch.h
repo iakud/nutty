@@ -1,14 +1,12 @@
-#ifndef CATTA_UTIL_COUNTDOWNLATCH_H
-#define CATTA_UTIL_COUNTDOWNLATCH_H
-
-#include <catta/base/noncopyable.h>
+#ifndef NUTTY_UTIL_COUNTDOWNLATCH_H
+#define NUTTY_UTIL_COUNTDOWNLATCH_H
 
 #include <condition_variable>
 #include <mutex>
 
-namespace catta {
+namespace nutty {
 
-class CountDownLatch : noncopyable {
+class CountDownLatch {
 public:
 	explicit CountDownLatch(int count);
 
@@ -17,11 +15,14 @@ public:
 	int count();
 
 private:
+	CountDownLatch(const CountDownLatch&) = delete;
+	CountDownLatch& operator=(const CountDownLatch&) = delete;
+
 	std::mutex mutex_;
 	std::condition_variable cv_;
 	int count_;
 }; // end class CountDownLatch
 
-} // end namespace catta
+} // end namespace nutty
 
-#endif // CATTA_UTIL_COUNTDOWNLATCH_H
+#endif // NUTTY_UTIL_COUNTDOWNLATCH_H

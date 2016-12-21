@@ -23,7 +23,7 @@ set(CXX_FLAGS
 	-Wwrite-strings
 	-march=native
 	-std=c++14
-	#-pthread
+	-pthread
 	-rdynamic
 	)
 
@@ -43,5 +43,5 @@ message(STATUS "CXX_FLAGS = " ${CMAKE_CXX_FLAGS} " " ${CMAKE_CXX_FLAGS_${BUILD_T
 add_subdirectory(nutty)
 
 if(NOT CMAKE_BUILD_NO_EXAMPLES)
-	add_subdirectory(examples)
+	#add_subdirectory(examples)
 endif()

@@ -1,10 +1,12 @@
-#include <catta/util/CountDownLatch.h>
+#include <nutty/util/CountDownLatch.h>
 
 #include <thread>
 #include <vector>
 #include <string>
 
 #include <iostream>
+
+using namespace nutty;
 
 class Test {
 public:
@@ -29,13 +31,16 @@ public:
 	}
 
 private:
+	Test(const Test&) = delete;
+	Test& operator=(const Test&) = delete;
+	
 	void threadFunc() {
 		std::cout << "thread " << std::this_thread::get_id() << " started" << std::endl;
 		latch_.countDown();
 		std::cout << "thread " << std::this_thread::get_id() << " stopped" << std::endl;
 	}
 
-	catta::CountDownLatch latch_;
+	CountDownLatch latch_;
 	std::vector<std::thread> threads_;
 };
 
