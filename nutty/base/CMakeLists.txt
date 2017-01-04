@@ -4,6 +4,8 @@ set(NUTTY_BASE_SRCS
 	Thread.cpp
 	EPollPoller.cpp
 	Watcher.cpp
+	Timer.cpp
+	TimerQueue.cpp
 	EventLoop.cpp
 	EventLoopThread.cpp
 	EventLoopThreadPool.cpp

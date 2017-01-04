@@ -1,33 +1,35 @@
 #include <nutty/base/EventLoop.h>
 
 #include <nutty/base/EPollPoller.h>
+#include <nutty/base/TimerQueue.h>
 #include <nutty/base/Watcher.h>
 
 #include <sys/eventfd.h>
 #include <unistd.h>
 
-using namespace nutty;
-
 namespace {
 
 const int kPollTime = 10000; // ms
 
-int createEventFd() {
+int createEventfd() {
 	int eventFd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
 	if (eventFd < 0) {
-		abort();
+		::abort(); // FIXME log
 	}
 	return eventFd;
 }
 
-} // anonymous
+} // end anonymous namespace
+
+using namespace nutty;
 
 EventLoop::EventLoop()
 	: quit_(false)
 	, callingPendingFunctors_(false)
 	, threadId_(CurrentThread::tid())
 	, poller_(new EPollPoller())
-	, wakeupFd_(createEventFd())
+	, timerQueue_(new TimerQueue(this))
+	, wakeupFd_(createEventfd())
 	, wakeupWatcher_(new Watcher(this, wakeupFd_))
 	, activeWatchers_()
 	, mutex_()
@@ -78,6 +80,16 @@ void EventLoop::queueInLoop(Functor&& cb) {
 	if (!isInLoopThread() || callingPendingFunctors_) {
 		wakeup();
 	}
+}
+
+void EventLoop::runAt(const std::chrono::steady_clock::time_point& abs_time, TimerCallback&& cb) {
+	timerQueue_->addTimer(std::move(cb), abs_time, std::chrono::steady_clock::duration::zero());
+}
+
+void EventLoop::runAfter(const std::chrono::steady_clock::duration& rel_time, TimerCallback&& cb) {
+	std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
+	time = time + rel_time;
+	timerQueue_->addTimer(std::move(cb), time, std::chrono::steady_clock::duration::zero());
 }
 
 void EventLoop::addWatcher(Watcher* watcher) {

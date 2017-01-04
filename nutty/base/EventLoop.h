@@ -6,12 +6,17 @@
 #include <mutex>
 #include <vector>
 #include <memory>
+#include <chrono>
 #include <functional>
+#include <nutty/base/Timer.h>
 
 namespace nutty {
 
 class Watcher;
 class EPollPoller;
+class TimerQueue;
+
+
 
 class EventLoop {
 public:
@@ -27,6 +32,13 @@ public:
 
 	void runInLoop(Functor&& cb);
 	void queueInLoop(Functor&& cb);
+
+	void runAt(const std::chrono::steady_clock::time_point& abs_time, TimerCallback&& cb);
+	void runAfter(const std::chrono::steady_clock::duration& rel_time, TimerCallback&& cb);
+	//TimerId runAfter(const std::chrono::duration<Rep, Period>& rel_time, TimerCallback&& cb);
+	//TimerId runEvery(double interval, TimerCallback&& cb);
+
+	//void cancel(TimerId timerId);
 
 	bool isInLoopThread() const { return threadId_ == CurrentThread::tid(); }
 
@@ -47,6 +59,7 @@ private:
 	bool callingPendingFunctors_;
 	const pid_t threadId_;
 	std::unique_ptr<EPollPoller> poller_;
+	std::unique_ptr<TimerQueue> timerQueue_;
 	int wakeupFd_;
 	std::unique_ptr<Watcher> wakeupWatcher_;
 
