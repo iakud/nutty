@@ -82,14 +82,16 @@ void EventLoop::queueInLoop(Functor&& cb) {
 	}
 }
 
-void EventLoop::runAt(const std::chrono::steady_clock::time_point& abs_time, TimerCallback&& cb) {
-	timerQueue_->addTimer(std::move(cb), abs_time, std::chrono::steady_clock::duration::zero());
+void EventLoop::runAt(const std::chrono::steady_clock::time_point& time, TimerCallback&& cb) {
+	timerQueue_->addTimer(std::move(cb), time);
 }
 
-void EventLoop::runAfter(const std::chrono::steady_clock::duration& rel_time, TimerCallback&& cb) {
-	std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
-	time = time + rel_time;
-	timerQueue_->addTimer(std::move(cb), time, std::chrono::steady_clock::duration::zero());
+void EventLoop::runAfter(const std::chrono::steady_clock::duration& delay, TimerCallback&& cb) {
+	timerQueue_->addTimer(std::move(cb), std::chrono::steady_clock::now() + delay);
+}
+
+void EventLoop::runEvery(const std::chrono::steady_clock::duration& interval, TimerCallback&& cb) {
+	timerQueue_->addTimer(std::move(cb), std::chrono::steady_clock::now() + interval, interval);
 }
 
 void EventLoop::addWatcher(Watcher* watcher) {

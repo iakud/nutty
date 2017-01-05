@@ -33,10 +33,9 @@ public:
 	void runInLoop(Functor&& cb);
 	void queueInLoop(Functor&& cb);
 
-	void runAt(const std::chrono::steady_clock::time_point& abs_time, TimerCallback&& cb);
-	void runAfter(const std::chrono::steady_clock::duration& rel_time, TimerCallback&& cb);
-	//TimerId runAfter(const std::chrono::duration<Rep, Period>& rel_time, TimerCallback&& cb);
-	//TimerId runEvery(double interval, TimerCallback&& cb);
+	void runAt(const std::chrono::steady_clock::time_point& time, TimerCallback&& cb);
+	void runAfter(const std::chrono::steady_clock::duration& delay, TimerCallback&& cb);
+	void runEvery(const std::chrono::steady_clock::duration& interval, TimerCallback&& cb);
 
 	//void cancel(TimerId timerId);
 
