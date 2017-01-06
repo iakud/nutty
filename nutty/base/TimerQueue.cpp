@@ -1,8 +1,10 @@
 #include <nutty/base/TimerQueue.h>
 
+#include <nutty/base/Timer.h>
 #include <nutty/base/EventLoop.h>
 
 #include <vector>
+#include <algorithm>
 #include <sys/timerfd.h>
 
 namespace {
@@ -22,7 +24,8 @@ using namespace nutty;
 TimerQueue::TimerQueue(EventLoop* loop)
 	: loop_(loop)
 	, timerfd_(createTimerfd())
-	, watcher_(loop, timerfd_) {
+	, watcher_(loop, timerfd_)
+	, callingExpiredTimers_(false) {
 	watcher_.setReadCallback(std::bind(&TimerQueue::handleRead, this));
 	watcher_.enableReading();
 	watcher_.start();
@@ -33,19 +36,32 @@ TimerQueue::~TimerQueue() {
 	::close(timerfd_);
 }
 
-void TimerQueue::addTimer(TimerCallback&& cb,
+TimerPtr TimerQueue::addTimer(TimerCallback&& cb,
 	const std::chrono::steady_clock::time_point& time,
 	const std::chrono::steady_clock::duration& interval) {
-
 	TimerPtr timer = std::make_shared<Timer>(std::move(cb), time, interval);
 	loop_->runInLoop(std::bind(&TimerQueue::addTimerInLoop, this, timer));
+	return timer;
+}
+
+void TimerQueue::cancel(TimerPtr& timer) {
+	loop_->runInLoop(std::bind(&TimerQueue::cancelInLoop, this, timer));
 }
 
 void TimerQueue::addTimerInLoop(TimerPtr& timer) {
-	std::multimap<std::chrono::steady_clock::time_point, TimerPtr>::iterator it = timers_.insert(std::make_pair(timer->expiration() , timer));
+	TimerMap::iterator it = timers_.insert(std::make_pair(timer->expiration() , timer));
 	if (timers_.begin() == it) {
-		//std::cout << "addTimerInLoop 2" << std::endl;
 		resetTimer(timer->expiration());
+	}
+}
+
+void TimerQueue::cancelInLoop(TimerPtr& timer) {
+	std::pair<TimerMap::iterator, TimerMap::iterator> range = timers_.equal_range(timer->expiration());
+	TimerMap::iterator it = std::find(range.first, range.second, TimerMap::value_type(timer->expiration(), timer));
+	if (it != range.second) {
+		timers_.erase(it);
+	} else if (callingExpiredTimers_) {
+		cancelingTimers_.insert(timer);
 	}
 }
 
@@ -58,28 +74,32 @@ void TimerQueue::handleRead() {
 		// LOG_ERROR << "TimerQueue::handleRead() reads " << n << " bytes instead of 8";
 	}
 
-	std::multimap<std::chrono::steady_clock::time_point, TimerPtr>::iterator end = timers_.lower_bound(now);
+	TimerMap::iterator bound = timers_.upper_bound(now);
 	std::vector<TimerPtr> expired;
-	for (auto it = timers_.begin(); it != end; ++it) {
-		TimerPtr& timer = it->second;
+	for (TimerMap::iterator it = timers_.begin(); it != bound; ++it) {
+		expired.push_back(it->second);
+	}
+	timers_.erase(timers_.begin(), bound);
+
+	callingExpiredTimers_ = true;
+	cancelingTimers_.clear();
+	for (TimerPtr& timer : expired) {
 		timer->run();
-		if (timer->repeat()) {
+	}
+	callingExpiredTimers_ = false;
+
+	for (TimerPtr& timer : expired) {
+		if (timer->repeat() && cancelingTimers_.find(timer) == cancelingTimers_.end()) {
 			timer->restart();
-			expired.push_back(timer);
+			timers_.insert(std::make_pair(timer->expiration(), timer));
 		}
 	}
-	timers_.erase(timers_.begin(), end);
-	for (TimerPtr& timer : expired) {
-		timers_.insert(std::make_pair(timer->expiration() , timer));
-	}
+	// reset timer
 	if (!timers_.empty()) {
 		resetTimer(timers_.begin()->first);
 	} else {
-		//std::chrono::steady_clock::time_point zero(std::chrono::steady_clock::duration::zero());
-		//resetTimer(zero);
+		resetTimer(std::chrono::steady_clock::time_point(std::chrono::steady_clock::duration::zero()));
 	}
-
-	//std::transform(timers_.begin(), it, expired.begin(), std::get<1, std::chrono::steady_clock::time_point, std::shared_ptr<Timer>>);
 }
 
 void TimerQueue::resetTimer(const std::chrono::steady_clock::time_point& time) {
