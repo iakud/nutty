@@ -154,11 +154,13 @@ void TcpConnection::sendInLoop(BufferPtr& buf) {
 		// FIXME : log
 		return;
 	}
-	if (!watcher_->isWriting() && buf->size() > 0) {
-		ssize_t nwrote = socket_->write(buf->data(), buf->size());
+	uint32_t count = buf->readableSize();
+	if (!watcher_->isWriting() && count > 0) {
+		ssize_t nwrote = socket_->write(buf->data(), count);
 		if (nwrote > 0) {
-			if (nwrote < buf->size()) {
-				sendBuffer_.append(std::move(*buf), static_cast<uint32_t>(nwrote));
+			if (nwrote < count) {
+				buf->hasRead(static_cast<uint32_t>(nwrote));
+				sendBuffer_.append(std::move(*buf));
 				watcher_->enableWriting();
 			} else if (writeCallback_) {
 				// loop_->queueInLoop(std::bind(writeCallback_, shared_from_this(), nwrote));
