@@ -51,25 +51,18 @@ void TcpConnection::send(const void* buf, uint32_t count) {
 }
 
 void TcpConnection::send(const std::string& data) {
-	if (state_ == kConnected) {
-		if (loop_->isInLoopThread()) {
-			sendInLoop(data.c_str(), static_cast<uint32_t>(data.size()));
-		} else {
-			void (TcpConnection::*fp)(BufferPtr&) = &TcpConnection::sendInLoop;
-			loop_->queueInLoop(std::bind(fp, this, std::make_shared<Buffer>(data.c_str(), data.size())));
-		}
-	}
+	send(data.c_str(), static_cast<uint32_t>(data.size()));
 }
 
-void TcpConnection::send(const ReceiveBuffer& buffer) {
+void TcpConnection::send(const ReceiveBuffer& receiveBuffer) {
 	if (state_ == kConnected) {
 		if (loop_->isInLoopThread()) {
-			sendInLoop(buffer);
+			sendInLoop(receiveBuffer);
 		} else {
-			BufferPtr buf = std::make_shared<Buffer>(buffer.size());
-			buffer.peek(buf->data(), buf->capacity());
+			BufferPtr buffer = std::make_shared<Buffer>(receiveBuffer.size());
+			receiveBuffer.peek(buffer->data(), buffer->capacity());
 			void (TcpConnection::*fp)(BufferPtr&) = &TcpConnection::sendInLoop;
-			loop_->queueInLoop(std::bind(fp, this, std::move(buf)));
+			loop_->queueInLoop(std::bind(fp, this, std::move(buffer)));
 		}
 	}
 }
@@ -207,30 +200,30 @@ void TcpConnection::sendInLoop(BufferPtr& buf) {
 	}
 }
 
-void TcpConnection::sendInLoop(const ReceiveBuffer& buffer) {
+void TcpConnection::sendInLoop(const ReceiveBuffer& receiveBuffer) {
 	if (state_ == kDisconnected) {
 		// FIXME : log
 		return;
 	}
-	uint32_t count = buffer.size();
+	uint32_t count = receiveBuffer.size();
 	if (!watcher_->isWriting() && count > 0) {
-		struct iovec iov[buffer.buffersSize()];
+		struct iovec iov[receiveBuffer.buffersSize()];
 		int iovcnt;
-		buffer.prepareSend(iov, iovcnt);
+		receiveBuffer.prepareSend(iov, iovcnt);
 		ssize_t nwrote = socket_->writev(iov, iovcnt);
 		if (nwrote > 0) {
 			if (nwrote < count) {
-				Buffer buf(count - static_cast<uint32_t>(nwrote));
-				buffer.peek(buf.data(), count - static_cast<uint32_t>(nwrote));
-				sendBuffer_.append(std::move(buf));
+				Buffer buffer(count - static_cast<uint32_t>(nwrote));
+				receiveBuffer.peek(buffer.data(), count - static_cast<uint32_t>(nwrote));
+				sendBuffer_.append(std::move(buffer));
 				watcher_->enableWriting();
 			} else if (writeCallback_) {
 				// loop_->queueInLoop(std::bind(writeCallback_, shared_from_this(), nwrote));
 			}
 		} else if (nwrote == 0) {
-			Buffer buf(count);
-			buffer.peek(buf.data(), count);
-			sendBuffer_.append(std::move(buf));
+			Buffer buffer(count);
+			receiveBuffer.peek(buffer.data(), count);
+			sendBuffer_.append(std::move(buffer));
 			watcher_->enableWriting();
 		} else {
 			if (errno != EWOULDBLOCK) {
@@ -239,9 +232,9 @@ void TcpConnection::sendInLoop(const ReceiveBuffer& buffer) {
 					return;
 				}
 			}
-			Buffer buf(count);
-			buffer.peek(buf.data(), count);
-			sendBuffer_.append(std::move(buf));
+			Buffer buffer(count);
+			receiveBuffer.peek(buffer.data(), count);
+			sendBuffer_.append(std::move(buffer));
 			watcher_->enableWriting();
 		}
 	}

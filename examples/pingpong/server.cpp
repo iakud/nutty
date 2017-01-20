@@ -12,9 +12,9 @@ void onConnect(const TcpConnectionPtr& conn) {
 	std::cout << "client connect" << std::endl;
 }
 
-void onRead(const TcpConnectionPtr& conn, ReceiveBuffer& buffer) {
-	conn->send(buffer);
-	buffer.retrieveAll();
+void onRead(const TcpConnectionPtr& conn, ReceiveBuffer& receiveBuffer) {
+	conn->send(receiveBuffer);
+	receiveBuffer.retrieveAll();
 }
 
 void onDisconnect(const TcpConnectionPtr& conn) {

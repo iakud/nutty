@@ -132,13 +132,13 @@ void Session::onDisconnect(const TcpConnectionPtr& conn) {
 	conn_.reset();
 }
 
-void Session::onRead(const TcpConnectionPtr& conn, ReceiveBuffer& buffer) {
+void Session::onRead(const TcpConnectionPtr& conn, ReceiveBuffer& receiveBuffer) {
 	++countRead_;
-	bytesRead_ += buffer.size();
-	bytesWritten_ += buffer.size();
+	bytesRead_ += receiveBuffer.size();
+	bytesWritten_ += receiveBuffer.size();
 
-	conn->send(buffer);
-	buffer.retrieveAll();
+	conn->send(receiveBuffer);
+	receiveBuffer.retrieveAll();
 }
 
 int main(int argc, char* argv[]) {
