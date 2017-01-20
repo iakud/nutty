@@ -83,7 +83,6 @@ public:
 	}
 
 	void onDisconnect() {
-		std::cout << "numConnected_: " << numConnected_ << std::endl;
 		if (--numConnected_ == 0) {
 			std::cout << "all disconnected" << std::endl;
 
@@ -129,7 +128,6 @@ void Session::onConnect(const TcpConnectionPtr& conn) {
 }
 
 void Session::onDisconnect(const TcpConnectionPtr& conn) {
-	std::cout << "disconnected" << std::endl;
 	owner_->onDisconnect();
 	conn_.reset();
 }
