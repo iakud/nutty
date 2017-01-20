@@ -34,7 +34,7 @@ public:
 
 	void send(const void* buf, uint32_t count);
 	void send(const std::string& data);
-	void send(ReceiveBuffer& buffer);
+	void send(const ReceiveBuffer& buffer);
 	void shutdown();
 	void forceClose();
 
@@ -60,6 +60,7 @@ private:
 
 	void sendInLoop(const void* buf, uint32_t count);
 	void sendInLoop(BufferPtr& buffer);
+	void sendInLoop(const ReceiveBuffer& buffer);
 	void shutdownInLoop();
 	void forceCloseInLoop();
 	void establishedInLoop();

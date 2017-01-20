@@ -61,8 +61,17 @@ void TcpConnection::send(const std::string& data) {
 	}
 }
 
-void TcpConnection::send(ReceiveBuffer& buffer) {
-
+void TcpConnection::send(const ReceiveBuffer& buffer) {
+	if (state_ == kConnected) {
+		if (loop_->isInLoopThread()) {
+			sendInLoop(buffer);
+		} else {
+			BufferPtr buf = std::make_shared<Buffer>(buffer.size());
+			buffer.peek(buf->data(), buf->capacity());
+			void (TcpConnection::*fp)(BufferPtr&) = &TcpConnection::sendInLoop;
+			loop_->queueInLoop(std::bind(fp, this, std::move(buf)));
+		}
+	}
 }
 
 void TcpConnection::shutdown() {
@@ -193,6 +202,46 @@ void TcpConnection::sendInLoop(BufferPtr& buf) {
 				}
 			}
 			sendBuffer_.append(std::move(*buf));
+			watcher_->enableWriting();
+		}
+	}
+}
+
+void TcpConnection::sendInLoop(const ReceiveBuffer& buffer) {
+	if (state_ == kDisconnected) {
+		// FIXME : log
+		return;
+	}
+	uint32_t count = buffer.size();
+	if (!watcher_->isWriting() && count > 0) {
+		struct iovec iov[buffer.buffersSize()];
+		int iovcnt;
+		buffer.prepareSend(iov, iovcnt);
+		ssize_t nwrote = socket_->writev(iov, iovcnt);
+		if (nwrote > 0) {
+			if (nwrote < count) {
+				Buffer buf(count - static_cast<uint32_t>(nwrote));
+				buffer.peek(buf.data(), count - static_cast<uint32_t>(nwrote));
+				sendBuffer_.append(std::move(buf));
+				watcher_->enableWriting();
+			} else if (writeCallback_) {
+				// loop_->queueInLoop(std::bind(writeCallback_, shared_from_this(), nwrote));
+			}
+		} else if (nwrote == 0) {
+			Buffer buf(count);
+			buffer.peek(buf.data(), count);
+			sendBuffer_.append(std::move(buf));
+			watcher_->enableWriting();
+		} else {
+			if (errno != EWOULDBLOCK) {
+				// FIXME log
+				if (errno == EPIPE || errno == ECONNRESET) {
+					return;
+				}
+			}
+			Buffer buf(count);
+			buffer.peek(buf.data(), count);
+			sendBuffer_.append(std::move(buf));
 			watcher_->enableWriting();
 		}
 	}

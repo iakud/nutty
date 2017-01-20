@@ -13,13 +13,8 @@ void onConnect(const TcpConnectionPtr& conn) {
 }
 
 void onRead(const TcpConnectionPtr& conn, ReceiveBuffer& buffer) {
-	int len = buffer.size();
-	char buf[len];
-	buffer.read(buf, len);
-	std::string message(buf, len);
-	conn->send(message.data(), static_cast<uint32_t>(message.size()));
-	
-	//conn->send(buffer);
+	conn->send(buffer);
+	buffer.retrieveAll();
 }
 
 void onDisconnect(const TcpConnectionPtr& conn) {

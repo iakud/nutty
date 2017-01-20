@@ -137,13 +137,8 @@ void Session::onRead(const TcpConnectionPtr& conn, ReceiveBuffer& buffer) {
 	bytesRead_ += buffer.size();
 	bytesWritten_ += buffer.size();
 
-	int len = buffer.size();
-	char buf[len];
-	buffer.read(buf, len);
-	std::string message(buf, len);
-	conn->send(message.data(), static_cast<uint32_t>(message.size()));
-
-	//conn->send(buffer);
+	conn->send(buffer);
+	buffer.retrieveAll();
 }
 
 int main(int argc, char* argv[]) {
@@ -151,7 +146,6 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr, "Usage: client <host_ip> <port> <threads> <blocksize> <sessions> <time>\n");
 		return 0;
 	}
-
 	const char* ip = argv[1];
 	uint16_t port = static_cast<uint16_t>(atoi(argv[2]));
 	int threadCount = atoi(argv[3]);
