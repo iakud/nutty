@@ -30,7 +30,11 @@ public:
 	void setReadCallback(const ReadCallback& cb) { readCallback_ = cb; }
 	void setWriteCallback(const WriteCallback& cb) { writeCallback_ = cb; }
 
+	void setTcpNoDelay(bool nodelay);
+
 	void send(const void* buf, uint32_t count);
+	void send(const std::string& data);
+	void send(ReceiveBuffer& buffer);
 	void shutdown();
 	void forceClose();
 

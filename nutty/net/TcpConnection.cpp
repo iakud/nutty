@@ -28,13 +28,15 @@ TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
 	watcher_->setErrorCallback(std::bind(&TcpConnection::handleError, this));
 	watcher_->setReadCallback(std::bind(&TcpConnection::handleRead, this));
 	watcher_->setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
-
 	socket_->setKeepAlive(true);
-	socket_->setTcpNoDelay(true); // FIXME : for test
 }
 
 TcpConnection::~TcpConnection() {
 	Socket::close(socket_->fd());
+}
+
+void TcpConnection::setTcpNoDelay(bool nodelay) {
+	socket_->setTcpNoDelay(nodelay);
 }
 
 void TcpConnection::send(const void* buf, uint32_t count) {
@@ -46,6 +48,21 @@ void TcpConnection::send(const void* buf, uint32_t count) {
 			loop_->queueInLoop(std::bind(fp, this, std::make_shared<Buffer>(buf, count)));
 		}
 	}
+}
+
+void TcpConnection::send(const std::string& data) {
+	if (state_ == kConnected) {
+		if (loop_->isInLoopThread()) {
+			sendInLoop(data.c_str(), static_cast<uint32_t>(data.size()));
+		} else {
+			void (TcpConnection::*fp)(BufferPtr&) = &TcpConnection::sendInLoop;
+			loop_->queueInLoop(std::bind(fp, this, std::make_shared<Buffer>(data.c_str(), data.size())));
+		}
+	}
+}
+
+void TcpConnection::send(ReceiveBuffer& buffer) {
+
 }
 
 void TcpConnection::shutdown() {

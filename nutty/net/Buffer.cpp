@@ -143,7 +143,7 @@ void ReceiveBuffer::prepareReceive(struct iovec* iov, int& iovcnt) {
 	}
 	if (nwrote < kReceiveSize) {
 		if (extendBuffers_.empty()) {
-			Buffer* buffer = new Buffer(kReceiveSize);
+			Buffer* buffer = new Buffer(kReceiveSize * 2);
 			extendBuffers_.push_back(buffer);
 		}
 		Buffer*& buffer = extendBuffers_.front();

@@ -8,30 +8,42 @@
 using namespace nutty;
 
 void onConnect(const TcpConnectionPtr& conn) {
-	//conn->setTcpNoDelay(true);
+	conn->setTcpNoDelay(true);
 	std::cout << "client connect" << std::endl;
 }
 
 void onRead(const TcpConnectionPtr& conn, ReceiveBuffer& buffer) {
 	int len = buffer.size();
-	char data[len];
-	buffer.read(data, len);
-	std::string message(data, len);
-	std::cout << message << std::endl;
+	char buf[len];
+	buffer.read(buf, len);
+	std::string message(buf, len);
 	conn->send(message.data(), static_cast<uint32_t>(message.size()));
+	
+	//conn->send(buffer);
 }
 
 void onDisconnect(const TcpConnectionPtr& conn) {
 	std::cout << "client disconnect" << std::endl;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+	if (argc < 4) {
+		fprintf(stderr, "Usage: server <address> <port> <threads>\n");
+		return 0;
+	}
+	const char* ip = argv[1];
+	uint16_t port = static_cast<uint16_t>(atoi(argv[2]));
+	InetAddress listenAddr(ip, port);
+	int threadCount = atoi(argv[3]);
+
 	EventLoop loop;
-	InetAddress listenAddr("127.0.0.1", 8888);
 	TcpServer server(&loop, listenAddr);
 	server.setConnectCallback(std::bind(onConnect, std::placeholders::_1));
 	server.setDisconnectCallback(std::bind(onDisconnect, std::placeholders::_1));
 	server.setReadCallback(onRead);
+	if (threadCount > 1) {
+		server.setThreadNum(threadCount);
+	}
 	server.start();
 	loop.loop();
 }
