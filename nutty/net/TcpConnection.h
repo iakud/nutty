@@ -2,7 +2,8 @@
 #define NUTTY_NET_TCPCONNECTION_H
 
 #include <nutty/net/Callbacks.h>
-#include <nutty/net/Buffer.h>
+#include <nutty/net/SendBuffer.h>
+#include <nutty/net/ReceiveBuffer.h>
 #include <nutty/net/InetAddress.h>
 
 #include <memory>
@@ -14,6 +15,7 @@ namespace nutty {
 class EventLoop;
 class Watcher;
 class Socket;
+class Buffer;
 
 class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 public:

@@ -1,8 +1,10 @@
 #include <nutty/net/TcpConnection.h>
 
 #include <nutty/net/Socket.h>
+#include <nutty/net/Buffer.h>
 #include <nutty/base/Watcher.h>
 #include <nutty/base/EventLoop.h>
+
 
 using namespace nutty;
 

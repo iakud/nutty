@@ -6,6 +6,8 @@ set(NUTTY_NET_SRCS
 	Acceptor.cpp
 	Connector.cpp
 	Buffer.cpp
+	SendBuffer.cpp
+	ReceiveBuffer.cpp
 	TcpConnection.cpp
 	TcpServer.cpp
 	TcpClient.cpp
