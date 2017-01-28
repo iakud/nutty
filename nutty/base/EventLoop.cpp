@@ -4,8 +4,9 @@
 #include <nutty/base/TimerQueue.h>
 #include <nutty/base/Watcher.h>
 
-#include <sys/eventfd.h>
+#include <signal.h>
 #include <unistd.h>
+#include <sys/eventfd.h>
 
 namespace {
 
@@ -18,6 +19,18 @@ int createEventfd() {
 	}
 	return eventFd;
 }
+
+//#pragma GCC diagnostic ignored "-Wold-style-cast"
+class IgnoreSigPipe {
+public:
+	IgnoreSigPipe() {
+		::signal(SIGPIPE, SIG_IGN);
+		// LOG_TRACE << "Ignore SIGPIPE";
+	}
+};
+//#pragma GCC diagnostic error "-Wold-style-cast"
+
+IgnoreSigPipe initObj;
 
 } // end anonymous namespace
 
