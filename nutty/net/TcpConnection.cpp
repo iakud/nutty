@@ -5,15 +5,14 @@
 #include <nutty/base/Watcher.h>
 #include <nutty/base/EventLoop.h>
 
-
 using namespace nutty;
 
 void defaultConnectCallback(const TcpConnectionPtr& connection) {
 
 }
 
-void defaultReadCallback(const TcpConnectionPtr& connection, ReceiveBuffer& buffer) {
-	// buffer->retrieveAll();
+void defaultReadCallback(const TcpConnectionPtr& connection, ReceiveBuffer& receiveBuffer) {
+	receiveBuffer.retrieveAll();
 }
 
 TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
@@ -215,17 +214,13 @@ void TcpConnection::sendInLoop(const ReceiveBuffer& receiveBuffer) {
 		ssize_t nwrote = socket_->writev(iov, iovcnt);
 		if (nwrote > 0) {
 			if (nwrote < count) {
-				Buffer buffer(count - static_cast<uint32_t>(nwrote));
-				receiveBuffer.peek(buffer.data(), count - static_cast<uint32_t>(nwrote));
-				sendBuffer_.append(std::move(buffer));
+				sendBuffer_.append(receiveBuffer, static_cast<uint32_t>(nwrote));
 				watcher_->enableWriting();
 			} else if (writeCallback_) {
 				// loop_->queueInLoop(std::bind(writeCallback_, shared_from_this(), nwrote));
 			}
 		} else if (nwrote == 0) {
-			Buffer buffer(count);
-			receiveBuffer.peek(buffer.data(), count);
-			sendBuffer_.append(std::move(buffer));
+			sendBuffer_.append(receiveBuffer);
 			watcher_->enableWriting();
 		} else {
 			if (errno != EWOULDBLOCK) {
@@ -234,9 +229,7 @@ void TcpConnection::sendInLoop(const ReceiveBuffer& receiveBuffer) {
 					return;
 				}
 			}
-			Buffer buffer(count);
-			receiveBuffer.peek(buffer.data(), count);
-			sendBuffer_.append(std::move(buffer));
+			sendBuffer_.append(receiveBuffer);
 			watcher_->enableWriting();
 		}
 	}

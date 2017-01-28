@@ -8,6 +8,7 @@ struct iovec;
 
 namespace nutty {
 
+class ReceiveBuffer;
 class Buffer;
 
 class SendBuffer {
@@ -17,11 +18,13 @@ public:
 
 	void append(const void* buf, uint32_t count);
 	void append(Buffer&& buf);
+	void append(const ReceiveBuffer& receiveBuffer);
+	void append(const ReceiveBuffer& receiveBuffer, uint32_t offset);
 
 	uint32_t size() const { return size_; }
 
 private:
-	static const uint32_t kSendSize = 8 * 1024;
+	static const uint32_t kSendSize = 16 * 1024;
 
 	SendBuffer(const SendBuffer&) = delete;
 	SendBuffer& operator=(const SendBuffer&) = delete;

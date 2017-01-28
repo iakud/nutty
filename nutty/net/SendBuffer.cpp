@@ -1,5 +1,6 @@
 #include <nutty/net/SendBuffer.h>
 
+#include <nutty/net/ReceiveBuffer.h>
 #include <nutty/net/Buffer.h>
 
 #include <arpa/inet.h>
@@ -25,7 +26,21 @@ void SendBuffer::append(const void* buf, uint32_t count) {
 void SendBuffer::append(Buffer&& buf) {
 	Buffer* buffer = new Buffer(std::move(buf));
 	buffers_.push_back(buffer);
-	size_ += buf.readableSize();
+	size_ += buffer->readableSize();
+}
+
+void SendBuffer::append(const ReceiveBuffer& receiveBuffer) {
+	Buffer* buffer = new Buffer(receiveBuffer.size());
+	receiveBuffer.peek(buffer->data(), buffer->capacity());
+	buffers_.push_back(buffer);
+	size_ += buffer->capacity();
+}
+
+void SendBuffer::append(const ReceiveBuffer& receiveBuffer, uint32_t offset) {
+	Buffer* buffer = new Buffer(receiveBuffer.size() - offset);
+	receiveBuffer.peek(buffer->data(), offset, buffer->capacity());
+	buffers_.push_back(buffer);
+	size_ += buffer->capacity();
 }
 
 void SendBuffer::prepareSend(struct iovec* iov, int& iovcnt) const {

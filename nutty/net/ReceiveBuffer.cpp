@@ -68,6 +68,22 @@ void ReceiveBuffer::peek(void* buf, uint32_t offset, uint32_t count) const {
 	}
 }
 
+void ReceiveBuffer::retrieve(uint32_t count) {
+	uint32_t nread = 0;
+	while (nread < count && !buffers_.empty()) {
+		Buffer* buffer = buffers_.front();
+		uint32_t readableSize = std::min(buffer->readableSize(), count - nread);
+		buffer->hasRead(readableSize);
+		nread += readableSize;
+		if (buffer->empty()) {
+			buffers_.pop_front();
+			buffer->reset();
+			extendBuffers_.push_back(buffer);
+		}
+	}
+	size_ -= nread;
+}
+
 void ReceiveBuffer::retrieveAll() {
 	while (!buffers_.empty()) {
 		Buffer* buffer = buffers_.front();

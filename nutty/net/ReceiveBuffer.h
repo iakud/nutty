@@ -18,6 +18,7 @@ public:
 	void read(void* buf, uint32_t count);
 	void peek(void* buf, uint32_t count) const;
 	void peek(void* buf, uint32_t offset, uint32_t count) const;
+	void retrieve(uint32_t count);
 	void retrieveAll();
 
 	uint32_t size() const { return size_; }
