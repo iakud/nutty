@@ -13,11 +13,11 @@ namespace {
 const int kPollTime = 10000; // ms
 
 int createEventfd() {
-	int eventFd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-	if (eventFd < 0) {
+	int eventfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+	if (eventfd < 0) {
 		::abort(); // FIXME log
 	}
-	return eventFd;
+	return eventfd;
 }
 
 //#pragma GCC diagnostic ignored "-Wold-style-cast"
