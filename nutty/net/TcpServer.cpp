@@ -56,8 +56,7 @@ void TcpServer::handleConnection(int sockfd, const InetAddress& peerAddr) {
 }
 
 void TcpServer::removeConnection(const int sockfd, const TcpConnectionPtr& connection) {
-	loop_->runInLoop(std::bind(&TcpServer::removeConnectionInLoop,
-		this, sockfd, connection));
+	loop_->runInLoop(std::bind(&TcpServer::removeConnectionInLoop, this, sockfd, connection));
 }
 
 void TcpServer::removeConnectionInLoop(const int sockfd, const TcpConnectionPtr& connection) {

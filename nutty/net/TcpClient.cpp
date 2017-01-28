@@ -45,8 +45,7 @@ void TcpClient::handleConnection(int sockfd, const InetAddress& localAddr) {
 	connection->setDisconnectCallback(disconnectCallback_);
 	connection->setReadCallback(readCallback_);
 	connection->setWriteCallback(writeCallback_);
-	connection->setCloseCallback(std::bind(&TcpClient::removeConnection,
-		this, std::placeholders::_1));
+	connection->setCloseCallback(std::bind(&TcpClient::removeConnection, this, std::placeholders::_1));
 	connection_ = connection;
 	connection->established();
 }
