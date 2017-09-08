@@ -86,7 +86,7 @@ void TcpConnection::destroyed() {
 
 void TcpConnection::handleClose() {
 	setState(kDisconnected);
-	watcher_->stop();
+	watcher_->disableAll();
 	TcpConnectionPtr guardThis(shared_from_this());
 	disconnectCallback_(guardThis);
 	closeCallback_(guardThis);
@@ -254,7 +254,6 @@ void TcpConnection::establishedInLoop() {
 	if (state_ == kConnecting) {
 		setState(kConnected);
 		watcher_->enableReading();
-		watcher_->start();
 		connectCallback_(shared_from_this());
 	}
 }
@@ -262,7 +261,7 @@ void TcpConnection::establishedInLoop() {
 void TcpConnection::destroyedInLoop() {
 	if (state_ == kConnected) {
 		setState(kDisconnected);
-		watcher_->stop();
+		watcher_->disableAll();
 		disconnectCallback_(shared_from_this());
 	}
 }

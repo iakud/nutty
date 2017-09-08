@@ -19,12 +19,11 @@ Acceptor::Acceptor(EventLoop* loop,const InetAddress& localAddr)
 	acceptSocket_.bind(localAddr.getSockAddr());
 
 	watcher_.setReadCallback(std::bind(&Acceptor::handleRead, this));
-	watcher_.enableReading();
 }
 
 Acceptor::~Acceptor() {
 	::close(idleFd_);
-	watcher_.stop();
+	watcher_.disableAll();
 }
 
 void Acceptor::start() {
@@ -35,7 +34,7 @@ void Acceptor::listen() {
 	if (!listenning_) {
 		listenning_ = true;
 		acceptSocket_.listen();
-		watcher_.start();
+		watcher_.enableReading();
 	}
 }
 

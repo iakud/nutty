@@ -24,7 +24,7 @@ public:
 	}
 
 	void start() { client_.start(); }
-	void stop() { if (conn_) conn_->shutdown(); }
+	void stop() { client_.stop(); if (conn_) conn_->shutdown(); }
 
 	int64_t bytesRead() const { return bytesRead_; }
 	int64_t countRead() const { return countRead_; }
@@ -60,18 +60,12 @@ public:
 		threadPool_.start();
 
 		for (int i = 0; i < sessionCount; ++i) {
-			Session* session = new Session(this, threadPool_.getLoop(), serverAddr);
+			std::shared_ptr<Session> session(new Session(this, threadPool_.getLoop(), serverAddr));
 			session->start();
 			sessions_.push_back(session);
 		}
 
 		loop->runAfter(std::chrono::seconds(timeout), std::bind(&Client::handleTimeout, this));
-	}
-
-	~Client() {
-		for (Session*& session : sessions_) {
-			delete session;
-		}
 	}
 
 	const std::string& message() const { return message_; }
@@ -82,13 +76,13 @@ public:
 		}
 	}
 
-	void onDisconnect() {
+	void onDisconnect(const TcpConnectionPtr& conn) {
 		if (--numConnected_ == 0) {
 			std::cout << "all disconnected" << std::endl;
 
 			int64_t totalBytesRead = 0;
 			int64_t totalCountRead = 0;
-			for (Session*& session : sessions_) {
+			for (std::shared_ptr<Session>& session : sessions_) {
 				totalBytesRead += session->bytesRead();
 				totalCountRead += session->countRead();
 			}
@@ -96,7 +90,7 @@ public:
 			std::cout << totalCountRead << " total count read" << std::endl;
 			std::cout << static_cast<double>(totalBytesRead) / static_cast<double>(totalCountRead) << " average message size" << std::endl;
 			std::cout << static_cast<double>(totalBytesRead) / (timeout_ * 1024 * 1024) << " MiB/s throughput" << std::endl;
-			loop_->queueInLoop(std::bind(&Client::quit, this));
+			conn->getLoop()->queueInLoop(std::bind(&Client::quit, this));
 		}
 	}
 
@@ -106,7 +100,7 @@ private:
 	}
 
 	void handleTimeout() {
-		for (Session*& session : sessions_) {
+		for (std::shared_ptr<Session>& session : sessions_) {
 			session->stop();
 		}
 	}
@@ -115,7 +109,7 @@ private:
 	EventLoopThreadPool threadPool_;
 	int sessionCount_;
 	int timeout_;
-	std::vector<Session*> sessions_;
+	std::vector<std::shared_ptr<Session>> sessions_;
 	std::string message_;
 	std::atomic<int> numConnected_;
 };
@@ -128,7 +122,7 @@ void Session::onConnect(const TcpConnectionPtr& conn) {
 }
 
 void Session::onDisconnect(const TcpConnectionPtr& conn) {
-	owner_->onDisconnect();
+	owner_->onDisconnect(conn);
 	conn_.reset();
 }
 

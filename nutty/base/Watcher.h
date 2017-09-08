@@ -34,9 +34,6 @@ public:
 	void containEvents(int revents) { revents_ = revents; }
 	void handleEvents();
 
-	void start();
-	void stop();
-
 private:
 	Watcher(const Watcher&) = delete;
 	Watcher& operator=(const Watcher&) = delete;

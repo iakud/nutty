@@ -21,23 +21,19 @@ Watcher::Watcher(EventLoop* loop, const int fd)
 Watcher::~Watcher() {
 }
 
-void Watcher::start() {
-	if (!started_) {
-		loop_->addWatcher(this);
-		started_ = true;
-	}
-}
-
 void Watcher::update() {
 	if (started_) {
-		loop_->updateWatcher(this);
-	}
-}
-
-void Watcher::stop() {
-	if (started_) {
-		loop_->removeWatcher(this);
-		started_ = false;
+		if (events_ == kNoneEvent) {
+			loop_->removeWatcher(this);
+			started_ = false;
+		} else {
+			loop_->updateWatcher(this);
+		}
+	} else {
+		if (events_ != kNoneEvent) {
+			loop_->addWatcher(this);
+			started_ = true;
+		}
 	}
 }
 

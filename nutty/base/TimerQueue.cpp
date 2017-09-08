@@ -28,11 +28,10 @@ TimerQueue::TimerQueue(EventLoop* loop)
 	, callingExpiredTimers_(false) {
 	watcher_.setReadCallback(std::bind(&TimerQueue::handleRead, this));
 	watcher_.enableReading();
-	watcher_.start();
 }
 
 TimerQueue::~TimerQueue() {
-	watcher_.stop();
+	watcher_.disableAll();
 	::close(timerfd_);
 }
 

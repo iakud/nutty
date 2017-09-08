@@ -59,11 +59,9 @@ void Connector::connecting() {
 	watcher_->setErrorCallback(std::bind(&Connector::handleError, this));
 	watcher_->setWriteCallback(std::bind(&Connector::handleWrite, this));
 	watcher_->enableWriting();
-	watcher_->start();
 }
 
 void Connector::stopAndResetWatcher() {
-	watcher_->stop();
 	watcher_->disableAll();
 	loop_->queueInLoop(std::bind(&Connector::resetWatcher, shared_from_this()));
 	connecting_ = false;

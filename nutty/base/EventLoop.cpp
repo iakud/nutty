@@ -49,11 +49,10 @@ EventLoop::EventLoop()
 	, pendingFunctors_() {
 	wakeupWatcher_->setReadCallback(std::bind(&EventLoop::handleWakeup, this));
 	wakeupWatcher_->enableReading();
-	wakeupWatcher_->start();
 }
 
 EventLoop::~EventLoop() {
-	wakeupWatcher_->stop();
+	wakeupWatcher_->disableAll();
 	::close(wakeupFd_);
 }
 

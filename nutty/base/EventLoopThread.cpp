@@ -22,8 +22,8 @@ void EventLoopThread::threadFunc() {
 	EventLoop loop;
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
-		cv_.notify_one();
 		loop_ = &loop;
+		cv_.notify_one();
 	}
 	loop.loop();
 	loop_ = nullptr;
