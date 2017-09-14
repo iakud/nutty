@@ -9,17 +9,15 @@ struct epoll_event;
 
 namespace nutty {
 
-class Watcher;
-
 class EPollPoller : public Poller {
 public:
 	EPollPoller();
 	virtual ~EPollPoller();
 
-	void poll(std::vector<Watcher*>& activeWatchers, int timeout);
-	void addWatcher(Watcher* watcher);
-	void updateWatcher(Watcher* watcher);
-	void removeWatcher(Watcher* watcher);
+	virtual void poll(std::vector<Watcher*>& activeWatchers, int timeout);
+	virtual void addWatcher(Watcher* watcher);
+	virtual void updateWatcher(Watcher* watcher);
+	virtual void removeWatcher(Watcher* watcher);
 
 private:
 	static const int kEventSizeInit = 16;

@@ -3,9 +3,7 @@
 using namespace nutty;
 
 Poller::Poller() {
-
 }
 
 Poller::~Poller() {
-	
 }

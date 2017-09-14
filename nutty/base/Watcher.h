@@ -31,7 +31,7 @@ public:
 	bool isReading() const { return events_ & kReadEvent; }
 	bool isWriting() const { return events_ & kWriteEvent; }
 	// revents
-	void containEvents(int revents) { revents_ = revents; }
+	void revents(int revents) { revents_ = revents; }
 	void handleEvents();
 
 private:

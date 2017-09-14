@@ -28,6 +28,9 @@ public:
 	void stop();
 
 private:
+	static const int kMaxRetryDelayMs = 30 * 1000;
+	static const int kInitRetryDelayMs = 500;
+
 	Connector(const Connector&) = delete;
 	Connector& operator=(const Connector&) = delete;
 	
@@ -51,6 +54,7 @@ private:
 	bool connect_;
 	bool connecting_;
 	bool retry_;
+	int retryDelayMs_;
 
 	ConnectionCallback connectionCallback_;
 }; // end class Connector

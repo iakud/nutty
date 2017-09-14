@@ -2,13 +2,13 @@
 
 #include <nutty/base/EventLoop.h>
 
-#include <sys/epoll.h>
+#include <poll.h>
 
 using namespace nutty;
 
 const int Watcher::kNoneEvent = 0;
-const int Watcher::kReadEvent = EPOLLIN | EPOLLPRI;
-const int Watcher::kWriteEvent = EPOLLOUT;
+const int Watcher::kReadEvent = POLLIN | POLLPRI;
+const int Watcher::kWriteEvent = POLLOUT;
 
 Watcher::Watcher(EventLoop* loop, const int fd)
 	: loop_(loop)
@@ -38,22 +38,25 @@ void Watcher::update() {
 }
 
 void Watcher::handleEvents() {
-	if (revents_ & EPOLLHUP && !(revents_ & EPOLLIN)) {
+	if (revents_ & POLLHUP && !(revents_ & POLLIN)) {
 		if (closeCallback_) {
 			closeCallback_();
 		}
 	}
-	if (revents_ & EPOLLERR) {
+	if (revents_ & POLLNVAL) {
+		// FIXME
+	}
+	if (revents_ & (POLLERR | POLLNVAL)) {
 		if (errorCallback_) {
 			errorCallback_();
 		}
 	}
-	if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
+	if (revents_ & (POLLIN | POLLPRI | POLLRDHUP)) {
 		if (readCallback_) {
 			readCallback_();
 		}
 	}
-	if (revents_ & EPOLLOUT) {
+	if (revents_ & POLLOUT) {
 		if (writeCallback_) {
 			writeCallback_();
 		}

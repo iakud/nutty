@@ -6,12 +6,15 @@
 
 using namespace nutty;
 
+const int Connector::kMaxRetryDelayMs;
+
 Connector::Connector(EventLoop* loop, const InetAddress& peerAddr)
 	: loop_(loop)
 	, peerAddr_(peerAddr)
 	, connect_(false)
 	, connecting_(false)
-	, retry_(false) {
+	, retry_(false)
+	, retryDelayMs_(kInitRetryDelayMs) {
 }
 
 Connector::~Connector() {
@@ -24,6 +27,7 @@ void Connector::start() {
 void Connector::restart() {
 	if (connect_) {
 		if (!connecting_ && !retry_) {
+			retryDelayMs_ = kInitRetryDelayMs;
 			connect();
 		}
 	}
@@ -76,7 +80,8 @@ void Connector::retry() {
 	connectSocket_.reset();
 	if (connect_) {
 		retry_ = true;
-		loop_->runInLoop(std::bind(&Connector::retrying, shared_from_this()));
+		loop_->runAfter(std::chrono::milliseconds(retryDelayMs_), std::bind(&Connector::retrying, shared_from_this()));
+		retryDelayMs_ = std::min(retryDelayMs_ * 2, kMaxRetryDelayMs);
 	}
 }
 

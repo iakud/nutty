@@ -26,13 +26,13 @@ EPollPoller::~EPollPoller() {
 }
 
 void EPollPoller::poll(std::vector<Watcher*>& activeWatchers, int timeout) {
-	int nfd = ::epoll_wait(epollfd_, events_.data(), static_cast<int>(events_.size()), timeout);
-	if (nfd > 0) {
-		fillActiveWatchers(nfd, activeWatchers);
-		if (nfd == static_cast<int>(events_.size())) {
+	int numEvents = ::epoll_wait(epollfd_, events_.data(), static_cast<int>(events_.size()), timeout);
+	if (numEvents > 0) {
+		fillActiveWatchers(numEvents, activeWatchers);
+		if (numEvents == static_cast<int>(events_.size())) {
 			events_.resize(events_.size() * 2); // events extend
 		}
-	} else if (nfd == 0) {
+	} else if (numEvents == 0) {
 
 	} else if (errno != EINTR) {
 		// error happens
@@ -43,7 +43,7 @@ void EPollPoller::fillActiveWatchers(int numEvents, std::vector<Watcher*>& activ
 	for (int i = 0; i < numEvents; ++i) {
 		struct epoll_event& event = events_[i];
 		Watcher* watcher = static_cast<Watcher*>(event.data.ptr);
-		watcher->containEvents(event.events); // contain triggered events
+		watcher->revents(event.events); // contain triggered events
 		activeWatchers.push_back(watcher);
 	}
 }
