@@ -1,8 +1,8 @@
 #ifndef NUTTY_NET_SENDBUFFER_H
 #define NUTTY_NET_SENDBUFFER_H
 
-#include <cstdint>
 #include <deque>
+#include <cstddef>
 
 struct iovec;
 
@@ -16,25 +16,25 @@ public:
 	SendBuffer();
 	~SendBuffer();
 
-	void append(const void* buf, uint32_t count);
+	void append(const void* buf, size_t count);
 	void append(Buffer&& buf);
 	void append(const ReceiveBuffer& receiveBuffer);
-	void append(const ReceiveBuffer& receiveBuffer, uint32_t offset);
+	void append(const ReceiveBuffer& receiveBuffer, size_t offset);
 
-	uint32_t size() const { return size_; }
+	size_t size() const { return size_; }
 
 private:
-	static const uint32_t kSendSize = 16 * 1024;
+	static const size_t kSendSize = 16 * 1024;
 
 	SendBuffer(const SendBuffer&) = delete;
 	SendBuffer& operator=(const SendBuffer&) = delete;
 
-	inline int buffersSize() const { return static_cast<int>(buffers_.size()); }
+	inline size_t buffersSize() const { return buffers_.size(); }
 	void prepareSend(struct iovec* iov, int& iovcnt) const;
-	void hasSent(uint32_t count);
+	void hasSent(size_t count);
 
 	std::deque<Buffer*> buffers_;
-	uint32_t size_;
+	size_t size_;
 
 	friend class TcpConnection;
 }; // end class SendBuffer

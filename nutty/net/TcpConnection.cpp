@@ -174,12 +174,12 @@ void TcpConnection::sendInLoop(BufferPtr& buf) {
 		// FIXME : log
 		return;
 	}
-	uint32_t count = buf->readableSize();
+	size_t count = buf->readableSize();
 	if (!watcher_->isWriting() && count > 0) {
 		ssize_t nwrote = socket_->write(buf->data(), count);
 		if (nwrote > 0) {
-			if (nwrote < count) {
-				buf->hasRead(static_cast<uint32_t>(nwrote));
+			if (static_cast<size_t>(nwrote) < count) {
+				buf->hasRead(static_cast<size_t>(nwrote));
 				sendBuffer_.append(std::move(*buf));
 				watcher_->enableWriting();
 			} else if (writeCallback_) {
@@ -206,15 +206,15 @@ void TcpConnection::sendInLoop(const ReceiveBuffer& receiveBuffer) {
 		// FIXME : log
 		return;
 	}
-	uint32_t count = receiveBuffer.size();
+	size_t count = receiveBuffer.size();
 	if (!watcher_->isWriting() && count > 0) {
 		struct iovec iov[receiveBuffer.buffersSize()];
 		int iovcnt;
 		receiveBuffer.prepareSend(iov, iovcnt);
 		ssize_t nwrote = socket_->writev(iov, iovcnt);
 		if (nwrote > 0) {
-			if (nwrote < count) {
-				sendBuffer_.append(receiveBuffer, static_cast<uint32_t>(nwrote));
+			if (static_cast<size_t>(nwrote) < count) {
+				sendBuffer_.append(receiveBuffer, static_cast<size_t>(nwrote));
 				watcher_->enableWriting();
 			} else if (writeCallback_) {
 				// loop_->queueInLoop(std::bind(writeCallback_, shared_from_this(), nwrote));
