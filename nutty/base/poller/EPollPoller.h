@@ -1,6 +1,8 @@
 #ifndef NUTTY_BASE_EPOLLPOLLER_H
 #define NUTTY_BASE_EPOLLPOLLER_H
 
+#include <nutty/base/Poller.h>
+
 #include <vector>
 
 struct epoll_event;
@@ -9,7 +11,7 @@ namespace nutty {
 
 class Watcher;
 
-class EPollPoller {
+class EPollPoller : public Poller {
 public:
 	EPollPoller();
 	virtual ~EPollPoller();

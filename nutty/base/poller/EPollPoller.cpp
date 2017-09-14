@@ -1,14 +1,23 @@
-#include <nutty/base/EPollPoller.h>
+#include <nutty/base/poller/EPollPoller.h>
 
 #include <nutty/base/Watcher.h>
 
+#include <poll.h>
 #include <sys/epoll.h>
 #include <unistd.h>
 
 using namespace nutty;
 
+static_assert(EPOLLIN == POLLIN, "EPOLLIN != POLLIN");
+static_assert(EPOLLPRI == POLLPRI, "EPOLLPRI != POLLPRI");
+static_assert(EPOLLOUT == POLLOUT, "EPOLLOUT != POLLOUT");
+static_assert(EPOLLERR == POLLERR, "EPOLLERR != POLLERR");
+static_assert(EPOLLHUP == POLLHUP, "EPOLLHUP != POLLHUP");
+static_assert(EPOLLRDHUP == POLLRDHUP, "EPOLLRDHUP != POLLRDHUP");
+
 EPollPoller::EPollPoller()
-	: epollfd_(::epoll_create1(EPOLL_CLOEXEC))
+	: Poller()
+	, epollfd_(::epoll_create1(EPOLL_CLOEXEC))
 	, events_(kEventSizeInit) {
 }
 

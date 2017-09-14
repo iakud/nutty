@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 
 set(NUTTY_BASE_SRCS
 	Thread.cpp
-	EPollPoller.cpp
+	Poller.cpp
+	poller/DefaultPoller.cpp
+	poller/PollPoller.cpp
+	poller/EPollPoller.cpp
 	Watcher.cpp
 	Timer.cpp
 	TimerQueue.cpp

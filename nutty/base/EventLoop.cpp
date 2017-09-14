@@ -1,6 +1,6 @@
 #include <nutty/base/EventLoop.h>
 
-#include <nutty/base/EPollPoller.h>
+#include <nutty/base/Poller.h>
 #include <nutty/base/TimerQueue.h>
 #include <nutty/base/Watcher.h>
 
@@ -40,7 +40,7 @@ EventLoop::EventLoop()
 	: quit_(false)
 	, callingPendingFunctors_(false)
 	, threadId_(CurrentThread::tid())
-	, poller_(new EPollPoller())
+	, poller_(Poller::createDefault())
 	, timerQueue_(new TimerQueue(this))
 	, wakeupFd_(createEventfd())
 	, wakeupWatcher_(new Watcher(this, wakeupFd_))

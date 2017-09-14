@@ -13,7 +13,7 @@
 namespace nutty {
 
 class Watcher;
-class EPollPoller;
+class Poller;
 class TimerQueue;
 
 class EventLoop {
@@ -54,7 +54,7 @@ private:
 	bool quit_;
 	bool callingPendingFunctors_;
 	const pid_t threadId_;
-	std::unique_ptr<EPollPoller> poller_;
+	std::unique_ptr<Poller> poller_;
 	std::unique_ptr<TimerQueue> timerQueue_;
 	int wakeupFd_;
 	std::unique_ptr<Watcher> wakeupWatcher_;
