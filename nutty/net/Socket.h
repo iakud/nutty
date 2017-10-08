@@ -7,19 +7,16 @@ namespace nutty {
 
 class Socket {
 public:
-	static int create();
-	static void close(int sockfd);
-
-public:
-	explicit Socket(int sockfd);
+	Socket();
+	Socket(Socket&& socket);
 	~Socket();
 
 	int fd() const { return sockfd_; }
 
 	int bind(const struct sockaddr_in& addr);
 	int listen();
-	int accept();
-	int accept(struct sockaddr_in& addr);
+	Socket accept();
+	Socket accept(struct sockaddr_in& addr);
 	int connect(const struct sockaddr_in& addr);
 
 	ssize_t read(void* buf, size_t count);
@@ -39,7 +36,12 @@ public:
 	struct sockaddr_in getPeerName();
 
 private:
-	const int sockfd_;
+	explicit Socket(int sockfd);
+
+	Socket(const Socket&) = delete;
+	Socket& operator=(const Socket&) = delete;
+
+	int sockfd_;
 }; // end class Socket
 
 } // end namespace nutty

@@ -33,7 +33,7 @@ private:
 	TcpServer(const TcpServer&) = delete;
 	TcpServer& operator=(const TcpServer&) = delete;
 
-	void handleConnection(int sockfd, const InetAddress& peerAddr);
+	void handleConnection(Socket&& socket, const InetAddress& peerAddr);
 	void removeConnection(const int sockfd, const TcpConnectionPtr& connection);
 	void removeConnectionInLoop(const int sockfd, const TcpConnectionPtr& connection);
 

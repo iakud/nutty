@@ -14,14 +14,12 @@ class Socket;
 
 class Connector : public std::enable_shared_from_this<Connector> {
 public:
-	typedef std::function<void(int sockfd, const InetAddress& localAddr)> ConnectionCallback;
+	typedef std::function<void(Socket&& socket, const InetAddress& localAddr)> ConnectionCallback;
 
 	explicit Connector(EventLoop* loop, const InetAddress& peerAddr);
 	~Connector();
 
-	void setConnectionCallback(ConnectionCallback&& cb) {
-		connectionCallback_ = cb;
-	}
+	void setConnectionCallback(ConnectionCallback&& cb) { connectionCallback_ = cb; }
 
 	void start();
 	void restart(); // call in loop

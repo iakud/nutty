@@ -9,20 +9,17 @@
 
 using namespace nutty;
 
-int Socket::create() {
-	int sockfd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP);
-	if (sockfd < 0) {
+Socket::Socket()
+	: sockfd_(::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP)) {
+	if (sockfd_ < 0) {
 		// FIXME : log
 		// LOG_FATAL
 	}
-	return sockfd;
 }
 
-void Socket::close(int sockfd) {
-	if (::close(sockfd) < 0) {
-		// FIXME : log
-		// LOG_ERR
-	}
+Socket::Socket(Socket&& socket)
+	: sockfd_(socket.sockfd_) {
+	socket.sockfd_ = -1;
 }
 
 Socket::Socket(int sockfd)
@@ -30,6 +27,10 @@ Socket::Socket(int sockfd)
 }
 
 Socket::~Socket() {
+	if (sockfd_ >= 0 && ::close(sockfd_) < 0) {
+		// FIXME : log
+		// LOG_ERR
+	}
 }
 
 int Socket::bind(const struct sockaddr_in& addr) {
@@ -40,13 +41,13 @@ int Socket::listen() {
 	return ::listen(sockfd_, SOMAXCONN);
 }
 
-int Socket::accept() {
-	return ::accept4(sockfd_, nullptr, nullptr, SOCK_NONBLOCK|SOCK_CLOEXEC);
+Socket Socket::accept() {
+	return Socket(::accept4(sockfd_, nullptr, nullptr, SOCK_NONBLOCK|SOCK_CLOEXEC));
 }
 
-int Socket::accept(struct sockaddr_in& addr) {
+Socket Socket::accept(struct sockaddr_in& addr) {
 	socklen_t addrlen = static_cast<socklen_t>(sizeof addr);
-	return ::accept4(sockfd_, reinterpret_cast<struct sockaddr*>(&addr), &addrlen, SOCK_NONBLOCK|SOCK_CLOEXEC);
+	return Socket(::accept4(sockfd_, reinterpret_cast<struct sockaddr*>(&addr), &addrlen, SOCK_NONBLOCK|SOCK_CLOEXEC));
 }
 
 int Socket::connect(const struct sockaddr_in& addr) {

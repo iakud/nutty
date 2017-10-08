@@ -38,13 +38,14 @@ void TcpServer::start() {
 	bool expected = false;
 	if (started_.compare_exchange_strong(expected, true)) {
 		threadPool_->start();
-		acceptor_->start();
+		loop_->runInLoop(std::bind(&Acceptor::listen, acceptor_.get()));
 	}
 }
 
-void TcpServer::handleConnection(int sockfd, const InetAddress& peerAddr) {
+void TcpServer::handleConnection(Socket&& socket, const InetAddress& peerAddr) {
 	EventLoop* loop = threadPool_->getLoop();
-	TcpConnectionPtr connection = std::make_shared<TcpConnection>(loop, sockfd, localAddr_, peerAddr);
+	const int sockfd = socket.fd();
+	TcpConnectionPtr connection = std::make_shared<TcpConnection>(loop, std::move(socket), localAddr_, peerAddr);
 	connection->setConnectCallback(connectCallback_);
 	connection->setDisconnectCallback(disconnectCallback_);
 	connection->setReadCallback(readCallback_);

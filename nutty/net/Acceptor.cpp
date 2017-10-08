@@ -9,58 +9,49 @@
 
 using namespace nutty;
 
-Acceptor::Acceptor(EventLoop* loop,const InetAddress& localAddr)
+Acceptor::Acceptor(EventLoop* loop, const InetAddress& localAddr)
 	: loop_(loop)
-	, acceptSocket_(Socket::create())
-	, watcher_(loop, acceptSocket_.fd())
+	, acceptSocket_()
+	, acceptWatcher_(loop, acceptSocket_.fd())
 	, listenning_(false)
 	, idleFd_(::open("/dev/null", O_RDONLY | O_CLOEXEC)) {
 	acceptSocket_.setReuseAddr(true);
 	acceptSocket_.bind(localAddr.getSockAddr());
-
-	watcher_.setReadCallback(std::bind(&Acceptor::handleRead, this));
+	acceptWatcher_.setReadCallback(std::bind(&Acceptor::handleRead, this));
 }
 
 Acceptor::~Acceptor() {
+	acceptWatcher_.disableAll();
 	::close(idleFd_);
-	watcher_.disableAll();
-}
-
-void Acceptor::start() {
-	loop_->runInLoop(std::bind(&Acceptor::listen, this));
 }
 
 void Acceptor::listen() {
-	if (!listenning_) {
-		listenning_ = true;
-		acceptSocket_.listen();
-		watcher_.enableReading();
-	}
+	if (listenning_) return;
+	listenning_ = true;
+	acceptSocket_.listen();
+	acceptWatcher_.enableReading();
 }
 
 void Acceptor::handleRead() {
 	InetAddress peerAddr;
 	struct sockaddr_in peerSockAddr;
-	int sockfd = acceptSocket_.accept(peerSockAddr);
-	if (sockfd >= 0) { // accept successful
-		peerAddr.setSockAddr(peerSockAddr);
-		if (connectionCallback_) {
-			connectionCallback_(sockfd, peerAddr);
-		} else {
-			Socket::close(sockfd); //Socket::close(sockfd);
-		}
-	} else {
+	Socket socket(acceptSocket_.accept(peerSockAddr));
+	if (socket.fd() < 0) {
 		int err = errno; // on error
 		if (EAGAIN == err) {
 
 		} else if (EMFILE == err || ENFILE == err) {
 			::close(idleFd_);
-			idleFd_ = acceptSocket_.accept();
-			::close(idleFd_);
+			acceptSocket_.accept();
 			idleFd_ = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
 		} else {
 			// FIXME
 			// LOG_FATAL
+		}
+	} else { // accept successful
+		peerAddr.setSockAddr(peerSockAddr);
+		if (connectionCallback_) {
+			connectionCallback_(std::move(socket), peerAddr);
 		}
 	}
 }

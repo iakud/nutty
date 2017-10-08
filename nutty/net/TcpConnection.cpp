@@ -15,12 +15,12 @@ void defaultReadCallback(const TcpConnectionPtr& connection, ReceiveBuffer& rece
 	receiveBuffer.retrieveAll();
 }
 
-TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
+TcpConnection::TcpConnection(EventLoop* loop, Socket&& socket,
 	const InetAddress& localAddr, const InetAddress& peerAddr)
 	: loop_(loop)
 	, state_(kConnecting)
-	, socket_(new Socket(sockfd))
-	, watcher_(new Watcher(loop, sockfd))
+	, socket_(new Socket(std::move(socket)))
+	, watcher_(new Watcher(loop, socket_->fd()))
 	, localAddr_(localAddr)
 	, peerAddr_(peerAddr)
 	, sendBuffer_()
@@ -33,7 +33,7 @@ TcpConnection::TcpConnection(EventLoop* loop, int sockfd,
 }
 
 TcpConnection::~TcpConnection() {
-	Socket::close(socket_->fd());
+	// Socket::close(socket_->fd());
 }
 
 void TcpConnection::setTcpNoDelay(bool nodelay) {

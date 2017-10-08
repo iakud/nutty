@@ -39,8 +39,8 @@ void TcpClient::stop() {
 	}
 }
 
-void TcpClient::handleConnection(int sockfd, const InetAddress& localAddr) {
-	TcpConnectionPtr connection = std::make_shared<TcpConnection>(loop_, sockfd, localAddr, peerAddr_);
+void TcpClient::handleConnection(Socket&& socket, const InetAddress& localAddr) {
+	TcpConnectionPtr connection = std::make_shared<TcpConnection>(loop_, std::move(socket), localAddr, peerAddr_);
 	connection->setConnectCallback(connectCallback_);
 	connection->setDisconnectCallback(disconnectCallback_);
 	connection->setReadCallback(readCallback_);

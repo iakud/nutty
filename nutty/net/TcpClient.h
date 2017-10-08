@@ -33,7 +33,7 @@ private:
 	TcpClient(const TcpClient&) = delete;
 	TcpClient& operator=(const TcpClient&) = delete;
 
-	void handleConnection(int sockfd, const InetAddress& localAddr);
+	void handleConnection(Socket&& socket, const InetAddress& localAddr);
 	void removeConnection(const TcpConnectionPtr& connection);
 
 	EventLoop* loop_;

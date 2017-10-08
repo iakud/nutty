@@ -13,27 +13,24 @@ class InetAddress;
 
 class Acceptor {
 public:
-	typedef std::function<void(int sockfd, const InetAddress& peerAddr)> ConnectionCallback;
+	typedef std::function<void(Socket&& socket, const InetAddress& peerAddr)> ConnectionCallback;
 
 	explicit Acceptor(EventLoop* loop, const InetAddress& localAddr);
 	~Acceptor();
 
-	void setConnectionCallback(ConnectionCallback&& cb) {
-		connectionCallback_ = cb;
-	}
+	void setConnectionCallback(ConnectionCallback&& cb) { connectionCallback_ = cb; }
 
-	void start();
+	void listen();
 
 private:
 	Acceptor(const Acceptor&) = delete;
 	Acceptor& operator=(const Acceptor&) = delete;
 
-	void listen();
 	void handleRead();	// read event active
 
 	EventLoop* loop_;
 	Socket acceptSocket_;
-	Watcher watcher_;
+	Watcher acceptWatcher_;
 	bool listenning_;	// is listenning
 	int idleFd_;
 

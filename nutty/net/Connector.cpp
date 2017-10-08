@@ -38,8 +38,7 @@ void Connector::stop() {
 }
 
 void Connector::connect() {
-	int sockfd = Socket::create();
-	connectSocket_.reset(new Socket(sockfd));
+	connectSocket_.reset(new Socket());
 	int ret = connectSocket_->connect(peerAddr_.getSockAddr());
 	if (ret == 0) {
 		connecting();
@@ -52,7 +51,6 @@ void Connector::connect() {
 	} else if (err == EAGAIN || err == EADDRINUSE || err == EADDRNOTAVAIL || err == ECONNREFUSED || err == ENETUNREACH) {
 		retry();
 	} else {
-		Socket::close(sockfd);
 		connectSocket_.reset();
 	}
 }
@@ -76,7 +74,6 @@ void Connector::resetWatcher() {
 }
 
 void Connector::retry() {
-	Socket::close(connectSocket_->fd());
 	connectSocket_.reset();
 	if (connect_) {
 		retry_ = true;
@@ -114,12 +111,10 @@ void Connector::handleWrite() {
 			if (localSockAddr.sin_port == peerSockAddr.sin_port && localSockAddr.sin_addr.s_addr == peerSockAddr.sin_addr.s_addr) {
 				retry();
 			} else {
-				int sockfd = connectSocket_->fd();
+				Socket socket(std::move(*connectSocket_.get()));
 				connectSocket_.reset();
 				if (connectionCallback_) {
-					connectionCallback_(sockfd, InetAddress(localSockAddr));
-				} else {
-					Socket::close(sockfd);
+					connectionCallback_(std::move(socket), InetAddress(localSockAddr));
 				}
 			}
 		}
@@ -140,7 +135,6 @@ void Connector::stopInLoop() {
 		connect_ = false;
 		if (connecting_) {
 			stopAndResetWatcher();
-			Socket::close(connectSocket_->fd());
 			connectSocket_.reset();
 		}
 	}

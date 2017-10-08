@@ -19,7 +19,7 @@ class Buffer;
 
 class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 public:
-	explicit TcpConnection(EventLoop* loop, int sockfd,
+	explicit TcpConnection(EventLoop* loop, Socket&& socket,
 		const InetAddress& localAddr, const InetAddress& peerAddr);
 	~TcpConnection();
 	
