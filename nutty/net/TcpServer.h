@@ -6,7 +6,7 @@
 
 #include <memory>
 #include <functional>
-#include <unordered_map>
+#include <unordered_set>
 #include <atomic>
 
 namespace nutty {
@@ -22,10 +22,10 @@ public:
 
 	void setThreadNum(int numThreads);
 
-	void setConnectCallback(const ConnectCallback&& cb) { connectCallback_ = std::move(cb); }
-	void setDisconnectCallback(const DisconnectCallback&& cb) { disconnectCallback_ = std::move(cb); }
-	void setReadCallback(const ReadCallback&& cb) { readCallback_ = std::move(cb); }
-	void setWriteCallback(const WriteCallback&& cb) { writeCallback_ = std::move(cb); }
+	void setConnectCallback(const ConnectCallback& cb) { connectCallback_ = cb; }
+	void setDisconnectCallback(const DisconnectCallback& cb) { disconnectCallback_ = cb; }
+	void setReadCallback(const ReadCallback& cb) { readCallback_ = cb; }
+	void setWriteCallback(const WriteCallback& cb) { writeCallback_ = cb; }
 
 	void start();
 
@@ -34,15 +34,15 @@ private:
 	TcpServer& operator=(const TcpServer&) = delete;
 
 	void handleConnection(Socket&& socket, const InetAddress& peerAddr);
-	void removeConnection(const int sockfd, const TcpConnectionPtr& connection);
-	void removeConnectionInLoop(const int sockfd, const TcpConnectionPtr& connection);
+	void removeConnection(const TcpConnectionPtr& connection);
+	void removeConnectionInLoop(const TcpConnectionPtr& connection);
 
 	EventLoop* loop_;
 	InetAddress localAddr_;
 	std::unique_ptr<Acceptor> acceptor_;
 	std::unique_ptr<EventLoopThreadPool> threadPool_;
 	std::atomic_bool started_;
-	std::unordered_map<int, TcpConnectionPtr> connections_;
+	std::unordered_set<TcpConnectionPtr> connections_;
 
 	ConnectCallback connectCallback_;
 	DisconnectCallback disconnectCallback_;

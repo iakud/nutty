@@ -18,7 +18,7 @@ public:
 	explicit Acceptor(EventLoop* loop, const InetAddress& localAddr);
 	~Acceptor();
 
-	void setConnectionCallback(ConnectionCallback&& cb) { connectionCallback_ = cb; }
+	void setConnectionCallback(ConnectionCallback&& cb) { connectionCallback_ = std::move(cb); }
 
 	void listen();
 

@@ -50,7 +50,7 @@ private:
 	TcpConnection(const TcpConnection&) = delete;
 	TcpConnection& operator=(const TcpConnection&) = delete;
 
-	void setCloseCallback(CloseCallback&& cb) { closeCallback_ = cb; }
+	void setCloseCallback(CloseCallback&& cb) { closeCallback_ = std::move(cb); }
 
 	void established();
 	void destroyed();

@@ -21,10 +21,10 @@ public:
 	bool retry() { return retry_; }
 	void enableRetry() { retry_ = true; }
 
-	void setConnectCallback(const ConnectCallback&& cb) { connectCallback_ = std::move(cb); }
-	void setDisconnectCallback(const DisconnectCallback&& cb) { disconnectCallback_ = std::move(cb); }
-	void setReadCallback(const ReadCallback&& cb) { readCallback_ = std::move(cb); }
-	void setWriteCallback(const WriteCallback&& cb) { writeCallback_ = std::move(cb); }
+	void setConnectCallback(const ConnectCallback& cb) { connectCallback_ = cb; }
+	void setDisconnectCallback(const DisconnectCallback& cb) { disconnectCallback_ = cb; }
+	void setReadCallback(const ReadCallback& cb) { readCallback_ = cb; }
+	void setWriteCallback(const WriteCallback& cb) { writeCallback_ = cb; }
 
 	void start();
 	void stop();

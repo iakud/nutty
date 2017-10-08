@@ -19,7 +19,7 @@ public:
 	explicit Connector(EventLoop* loop, const InetAddress& peerAddr);
 	~Connector();
 
-	void setConnectionCallback(ConnectionCallback&& cb) { connectionCallback_ = cb; }
+	void setConnectionCallback(ConnectionCallback&& cb) { connectionCallback_ = std::move(cb); }
 
 	void start();
 	void restart(); // call in loop

@@ -33,7 +33,6 @@ void Acceptor::listen() {
 }
 
 void Acceptor::handleRead() {
-	InetAddress peerAddr;
 	struct sockaddr_in peerSockAddr;
 	Socket socket(acceptSocket_.accept(peerSockAddr));
 	if (socket.fd() < 0) {
@@ -49,7 +48,7 @@ void Acceptor::handleRead() {
 			// LOG_FATAL
 		}
 	} else { // accept successful
-		peerAddr.setSockAddr(peerSockAddr);
+		InetAddress peerAddr(peerSockAddr);
 		if (connectionCallback_) {
 			connectionCallback_(std::move(socket), peerAddr);
 		}

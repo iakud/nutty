@@ -15,10 +15,10 @@ public:
 	~Watcher();
 
 	// callback
-	void setCloseCallback(EventCallback&& cb) { closeCallback_ = cb; }
-	void setErrorCallback(EventCallback&& cb) { errorCallback_ = cb; }
-	void setReadCallback(EventCallback&& cb) { readCallback_ = cb; }
-	void setWriteCallback(EventCallback&& cb) { writeCallback_ = cb; }
+	void setCloseCallback(EventCallback&& cb) { closeCallback_ = std::move(cb); }
+	void setErrorCallback(EventCallback&& cb) { errorCallback_ = std::move(cb); }
+	void setReadCallback(EventCallback&& cb) { readCallback_ = std::move(cb); }
+	void setWriteCallback(EventCallback&& cb) { writeCallback_ = std::move(cb); }
 	// fd
 	int fd() { return fd_; }
 	// events

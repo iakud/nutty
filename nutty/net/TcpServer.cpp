@@ -18,10 +18,8 @@ TcpServer::TcpServer(EventLoop* loop, const InetAddress& localAddr)
 
 TcpServer::~TcpServer() {
 	// destroy connections
-	for (auto& pairConnnection : connections_) {
-		TcpConnectionPtr& connection = pairConnnection.second;
+	for (const TcpConnectionPtr& connection : connections_) {
 		connection->destroyed();
-		connection.reset();
 	}
 	/* FIXME
 	if (started_) {
@@ -44,23 +42,22 @@ void TcpServer::start() {
 
 void TcpServer::handleConnection(Socket&& socket, const InetAddress& peerAddr) {
 	EventLoop* loop = threadPool_->getLoop();
-	const int sockfd = socket.fd();
 	TcpConnectionPtr connection = std::make_shared<TcpConnection>(loop, std::move(socket), localAddr_, peerAddr);
 	connection->setConnectCallback(connectCallback_);
 	connection->setDisconnectCallback(disconnectCallback_);
 	connection->setReadCallback(readCallback_);
 	connection->setWriteCallback(writeCallback_);
 	connection->setCloseCallback(std::bind(&TcpServer::removeConnection,
-		this, sockfd, std::placeholders::_1));
-	connections_[sockfd] = connection;
+		this, std::placeholders::_1));
+	connections_.insert(connection);
 	connection->established();
 }
 
-void TcpServer::removeConnection(const int sockfd, const TcpConnectionPtr& connection) {
-	loop_->runInLoop(std::bind(&TcpServer::removeConnectionInLoop, this, sockfd, connection));
+void TcpServer::removeConnection(const TcpConnectionPtr& connection) {
+	loop_->runInLoop(std::bind(&TcpServer::removeConnectionInLoop, this, connection));
 }
 
-void TcpServer::removeConnectionInLoop(const int sockfd, const TcpConnectionPtr& connection) {
-	connections_.erase(sockfd);
+void TcpServer::removeConnectionInLoop(const TcpConnectionPtr& connection) {
+	connections_.erase(connection);
 	connection->destroyed();
 }
