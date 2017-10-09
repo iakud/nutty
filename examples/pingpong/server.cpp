@@ -39,6 +39,6 @@ int main(int argc, char* argv[]) {
 	if (threadCount > 1) {
 		server.setThreadNum(threadCount);
 	}
-	server.start();
+	server.listen();
 	loop.loop();
 }

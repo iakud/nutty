@@ -23,8 +23,8 @@ public:
 		client_.setReadCallback(std::bind(&Session::onRead, this, std::placeholders::_1, std::placeholders::_2));
 	}
 
-	void start() { client_.start(); }
-	void stop() { client_.stop(); if (conn_) conn_->shutdown(); }
+	void start() { client_.connect(); }
+	void stop() { client_.disconnect(); if (conn_) conn_->shutdown(); }
 
 	int64_t bytesRead() const { return bytesRead_; }
 	int64_t countRead() const { return countRead_; }
