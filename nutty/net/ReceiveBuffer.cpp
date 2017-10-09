@@ -37,12 +37,39 @@ void ReceiveBuffer::read(void* buf, size_t count) {
 	size_ -= nread;
 }
 
+void ReceiveBuffer::read(std::string& buf, size_t count) {
+	size_t nread = 0;
+	while (nread < count && !buffers_.empty()) {
+		Buffer* buffer = buffers_.front();
+		size_t readableSize = std::min(buffer->readableSize(), count - nread);
+		buf.append(buffer->dataRead(), readableSize);
+		buffer->hasRead(readableSize);
+		nread += readableSize;
+		if (buffer->empty()) {
+			buffers_.pop_front();
+			buffer->reset();
+			extendBuffers_.push_back(buffer);
+		}
+	}
+	size_ -= nread;
+}
+
 void ReceiveBuffer::peek(void* buf, size_t count) const {
 	size_t nread = 0;
 	for (Buffer* buffer : buffers_) {
 		if (nread >= count) break;
 		size_t readableSize = std::min(buffer->readableSize(), count - nread);
 		std::memcpy(static_cast<char*>(buf) + nread, buffer->dataRead(), readableSize);
+		nread += readableSize;
+	}
+}
+
+void ReceiveBuffer::peek(std::string& buf, size_t count) const {
+	size_t nread = 0;
+	for (Buffer* buffer : buffers_) {
+		if (nread >= count) break;
+		size_t readableSize = std::min(buffer->readableSize(), count - nread);
+		buf.append(buffer->dataRead(), readableSize);
 		nread += readableSize;
 	}
 }
@@ -62,7 +89,28 @@ void ReceiveBuffer::peek(void* buf, size_t offset, size_t count) const {
 				offset -= readableSize;
 			}
 		} else {
-			std::memcpy(static_cast<char*>(buf) + nread, buffer->dataRead() + offset, readableSize);
+			std::memcpy(static_cast<char*>(buf) + nread, buffer->dataRead(), readableSize);
+			nread += readableSize;
+		}
+	}
+}
+
+void ReceiveBuffer::peek(std::string& buf, size_t offset, size_t count) const {
+	size_t nread = 0;
+	for (Buffer* buffer : buffers_) {
+		if (nread >= count) break;
+		size_t readableSize = std::min(buffer->readableSize(), count - nread);
+		if (offset > 0) {
+			if (offset < readableSize) {
+				readableSize -= offset;
+				buf.append(buffer->dataRead() + offset, readableSize);
+				offset = 0;
+				nread += readableSize;
+			} else {
+				offset -= readableSize;
+			}
+		} else {
+			buf.append(buffer->dataRead(), readableSize);
 			nread += readableSize;
 		}
 	}

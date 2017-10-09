@@ -2,6 +2,7 @@
 #define NUTTY_NET_RECEIVEBUFFER_H
 
 #include <deque>
+#include <string>
 #include <cstddef>
 
 struct iovec;
@@ -16,8 +17,11 @@ public:
 	~ReceiveBuffer();
 
 	void read(void* buf, size_t count);
+	void read(std::string& buf, size_t count);
 	void peek(void* buf, size_t count) const;
+	void peek(std::string& buf, size_t count) const;
 	void peek(void* buf, size_t offset, size_t count) const;
+	void peek(std::string& buf, size_t offset, size_t count) const;
 	void retrieve(size_t count);
 	void retrieveAll();
 
