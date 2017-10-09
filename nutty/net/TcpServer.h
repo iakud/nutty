@@ -27,7 +27,7 @@ public:
 	void setReadCallback(const ReadCallback& cb) { readCallback_ = cb; }
 	void setWriteCallback(const WriteCallback& cb) { writeCallback_ = cb; }
 
-	void start();
+	void listen();
 
 private:
 	TcpServer(const TcpServer&) = delete;

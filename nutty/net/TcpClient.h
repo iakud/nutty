@@ -4,6 +4,7 @@
 #include <nutty/net/TcpConnection.h>
 #include <nutty/net/InetAddress.h>
 
+#include <mutex>
 #include <memory>
 #include <functional>
 #include <atomic>
@@ -26,8 +27,8 @@ public:
 	void setReadCallback(const ReadCallback& cb) { readCallback_ = cb; }
 	void setWriteCallback(const WriteCallback& cb) { writeCallback_ = cb; }
 
-	void start();
-	void stop();
+	void connect();
+	void disconnect();
 
 private:
 	TcpClient(const TcpClient&) = delete;
@@ -41,6 +42,7 @@ private:
 	std::shared_ptr<Connector> connector_;
 	std::atomic_bool started_;
 	std::atomic_bool retry_;
+	std::mutex mutex_;
 	TcpConnectionPtr connection_;
 
 	ConnectCallback connectCallback_;

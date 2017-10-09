@@ -19,6 +19,7 @@ TcpServer::TcpServer(EventLoop* loop, const InetAddress& localAddr)
 TcpServer::~TcpServer() {
 	// destroy connections
 	for (const TcpConnectionPtr& connection : connections_) {
+		// FIXME: unsafe
 		connection->destroyed();
 	}
 	/* FIXME
@@ -32,7 +33,7 @@ void TcpServer::setThreadNum(int numThreads) {
 	threadPool_->setThreadNum(numThreads);
 }
 
-void TcpServer::start() {
+void TcpServer::listen() {
 	bool expected = false;
 	if (started_.compare_exchange_strong(expected, true)) {
 		threadPool_->start();

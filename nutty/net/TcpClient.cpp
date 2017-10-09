@@ -16,26 +16,36 @@ TcpClient::TcpClient(EventLoop* loop, const InetAddress& peerAddr)
 }
 
 TcpClient::~TcpClient() {
-	if (connection_) {
-		connection_->destroyed();
-		connection_.reset();
+	TcpConnectionPtr connection;
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		connection = connection_;
+	}
+	// FIXME: unsafe
+	if (connection) {
+		connection->destroyed();
+		connection.reset();
 	}
 	if (started_) {
 		connector_->stop();
 	}
 }
 
-void TcpClient::start() {
+void TcpClient::connect() {
 	bool expected = false;
 	if (started_.compare_exchange_strong(expected, true)) {
 		connector_->start();
 	}
 }
 
-void TcpClient::stop() {
+void TcpClient::disconnect() {
 	bool expected = true;
 	if (started_.compare_exchange_strong(expected, false)) {
 		connector_->stop();
+	}
+	std::unique_lock<std::mutex> lock(mutex_);
+	if (connection_) {
+		connection_->shutdown();
 	}
 }
 
@@ -46,12 +56,18 @@ void TcpClient::handleConnection(Socket&& socket, const InetAddress& localAddr) 
 	connection->setReadCallback(readCallback_);
 	connection->setWriteCallback(writeCallback_);
 	connection->setCloseCallback(std::bind(&TcpClient::removeConnection, this, std::placeholders::_1));
-	connection_ = connection;
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		connection_ = connection;
+	}
 	connection->established();
 }
 
 void TcpClient::removeConnection(const TcpConnectionPtr& connection) {
-	connection_.reset();
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		connection_.reset();
+	}
 	connection->destroyed();
 	if (retry_ && started_) {
 		connector_->restart();
