@@ -42,7 +42,7 @@ private:
 	}
 
 	void onMessage(const TcpConnectionPtr&, const std::string& message) {
-		std::cout << "<<< " << message.c_str() << std::endl;
+		printf("<<< %s\n", message.c_str());
 	}
 
 	TcpClient client_;
